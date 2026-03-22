@@ -1,11 +1,1838 @@
 <!DOCTYPE html>
-  <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KV Content Calendar</title>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>KV's Catalogue — Upload Schedule 2026</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<style>
+:root {
+  --bg:#0f0008;--surface:#1c000f;--surface2:#280013;--border:#3d001e;
+  --accent:#ff2d78;--perf:#3b82f6;--perf-bg:rgba(59,130,246,0.12);
+  --int:#22c55e;--int-bg:rgba(34,197,94,0.12);
+  --shoot:#f59e0b;--shoot-bg:rgba(245,158,11,0.12);
+  --done:#6b7280;--done-bg:rgba(107,114,128,0.1);
+  --overdue:#ef4444;--overdue-bg:rgba(239,68,68,0.08);
+  --soon:#f59e0b;
+  --text:#e8e8e8;--muted:#999999;
+  --font-display:'Bebas Neue',sans-serif;--font-body:'DM Sans',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);color:var(--text);font-family:var(--font-body);font-weight:300;min-height:100vh;background-image:radial-gradient(ellipse at 20% 0%,rgba(255,45,120,0.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(59,130,246,0.03) 0%,transparent 60%);}
+#loading-screen{position:fixed;inset:0;background:var(--bg);z-index:999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;transition:opacity 0.3s;}
+#loading-screen.hidden{opacity:0;pointer-events:none;}
+.loading-logo{font-family:var(--font-display);font-size:42px;letter-spacing:0.04em;color:var(--accent);}
+.loading-sub{font-size:12px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;}
+.loading-dots{display:flex;gap:6px;margin-top:8px;}
+.loading-dot{width:6px;height:6px;border-radius:50%;background:var(--accent);animation:dotPulse 1.2s ease-in-out infinite;}
+.loading-dot:nth-child(2){animation-delay:0.2s;}.loading-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes dotPulse{0%,80%,100%{opacity:0.2;transform:scale(0.8);}40%{opacity:1;transform:scale(1);}}
+#save-indicator{position:fixed;bottom:20px;right:20px;z-index:300;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 14px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:7px;opacity:0;transition:opacity 0.3s;pointer-events:none;}
+#save-indicator.visible{opacity:1;}
+#save-indicator.saving{color:var(--shoot);}
+#save-indicator.saved{color:var(--int);}
+#save-indicator.error{color:#ef4444;}
+.save-dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+header{position:sticky;top:0;z-index:100;background:var(--bg);border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;justify-content:space-between;gap:16px;box-shadow:0 4px 24px rgba(0,0,0,0.5),0 1px 0 rgba(255,45,120,0.07);backdrop-filter:blur(8px);}
+.header-center{position:absolute;left:50%;transform:translateX(-50%);pointer-events:none;display:flex;align-items:center;}
+.logo-block{display:flex;align-items:center;gap:12px;justify-content:center;}
+.header-left{display:flex;align-items:center;gap:12px;}
+.logo-divider{width:1px;height:32px;background:var(--border);flex-shrink:0;}
+.logo-sub{font-size:10px;font-weight:400;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase;white-space:nowrap;}
+.header-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.stat-pill{background:var(--surface2);border:1px solid var(--border);border-radius:20px;padding:5px 14px;font-size:11px;color:var(--muted);}
+.stat-pill span{color:var(--accent);font-weight:500;margin-left:4px;}
+.header-btn{background:transparent;border:1px solid var(--border);border-radius:7px;padding:6px 12px;font-family:var(--font-body);font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.header-btn:hover{border-color:#444;color:var(--text);}
+.header-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(255,45,120,0.07);}
+.filter-bar{padding:10px 32px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.filter-label{font-size:11px;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase;margin-right:4px;}
+.filter-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 13px;font-family:var(--font-body);font-size:12px;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.filter-btn:hover{border-color:#444;color:var(--text);}
+.filter-btn.active{border-color:var(--accent);color:var(--accent);background:rgba(255,45,120,0.07);}
+.search-wrap{position:relative;margin-left:4px;}
+.search-input{background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:5px 12px 5px 28px;font-family:var(--font-body);font-size:12px;color:var(--text);outline:none;width:160px;transition:border-color 0.15s;}
+.search-input:focus{border-color:var(--accent);}
+.search-input::placeholder{color:var(--muted);}
+.search-icon{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:11px;pointer-events:none;}
+.undo-redo-group{display:flex;align-items:center;gap:4px;margin-left:auto;}
+.ur-btn{background:transparent;border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-family:var(--font-body);font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.ur-btn:not(:disabled):hover{border-color:#444;color:var(--text);}
+.ur-btn:disabled{opacity:0.28;cursor:not-allowed;}
+.ur-label{font-size:10px;letter-spacing:0.04em;}
+.progress-section{padding:16px 32px 0;display:flex;gap:20px;flex-wrap:wrap;}
+.prog-card{flex:1;min-width:200px;background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 16px;}
+.prog-title{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.prog-bar-wrap{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-bottom:6px;}
+.prog-bar{height:100%;border-radius:3px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+.prog-nums{font-size:11px;color:var(--muted);}
+.prog-nums b{color:var(--text);font-weight:500;}
+.board{display:flex;gap:0;padding:20px 32px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch;min-height:calc(100vh - 200px);align-items:flex-start;}
+.column{flex:0 0 auto;width:274px;margin-right:14px;}
+.col-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:linear-gradient(180deg,var(--surface2) 0%,var(--surface) 100%);border:1px solid var(--border);border-radius:10px 10px 0 0;border-bottom:2px solid var(--accent);margin-bottom:2px;box-shadow:0 2px 8px rgba(0,0,0,0.3);}
+.col-title-wrap{flex:1;min-width:0;}
+.col-title{font-family:var(--font-display);font-size:16px;letter-spacing:0.08em;color:var(--accent);text-shadow:0 0 18px rgba(255,45,120,0.25);}
+.col-date{font-size:11px;color:var(--muted);letter-spacing:0.06em;}
+.col-right{display:flex;align-items:center;gap:6px;}
+.col-count{font-size:10px;background:rgba(255,45,120,0.1);color:var(--accent);border-radius:10px;padding:2px 8px;font-weight:500;}
+.sort-btn{background:none;border:none;cursor:pointer;color:var(--muted);font-size:13px;padding:2px 5px;border-radius:4px;transition:color 0.15s;}
+.sort-btn:hover{color:var(--accent);}
+.sort-btn.active-sort{color:var(--accent);}
+.col-cards{display:flex;flex-direction:column;gap:6px;}
+.col-cards.drag-over{border-radius:8px;background:rgba(232,255,71,0.02);min-height:60px;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:10px 12px;cursor:grab;position:relative;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.3);transition:border-color 0.2s,transform 0.25s cubic-bezier(0.2,0,0,1),background 0.2s,box-shadow 0.2s,margin 0.25s cubic-bezier(0.2,0,0,1);}
+.card::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:8px 0 0 8px;}
+.card.perf::before{background:var(--perf);}
+.card.int::before{background:var(--int);}
+.card.shoot::before{background:var(--shoot);}
+.card.done::before{background:var(--done);}
+.card.overdue::before{background:var(--overdue);}
+.card.overdue{border-color:rgba(239,68,68,0.3);background:var(--overdue-bg);}
+.card.due-soon{border-color:rgba(245,158,11,0.25);}
+.card:hover{border-color:#3d3d3d;transform:translateY(-2px);background:var(--surface2);box-shadow:0 6px 20px rgba(0,0,0,0.4),0 0 0 1px rgba(255,45,120,0.05);}
+.card.overdue:hover{background:rgba(239,68,68,0.12);}
+.card.done{opacity:0.5;}
+.card.done:hover{opacity:0.75;}
+.card.dragging{opacity:0.2;transform:scale(0.96);pointer-events:none;}
+.drop-placeholder{height:4px;border-radius:4px;background:var(--accent);margin:3px 0;transition:all 0.2s ease;box-shadow:0 0 10px rgba(255,45,120,0.35);pointer-events:none;}
+.card-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;}
+.card-artist{font-weight:500;font-size:13px;color:var(--text);}
+.card-tag{font-size:10px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;padding:2px 7px;}
+.card-tag.perf{background:var(--perf-bg);color:var(--perf);}
+.card-tag.int{background:var(--int-bg);color:var(--int);}
+.card-tag.shoot{background:var(--shoot-bg);color:var(--shoot);}
+.card-tag.done{background:var(--done-bg);color:var(--done);}
+.card-tag.overdue{background:rgba(239,68,68,0.12);color:var(--overdue);}
+.card-detail-wrap{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
+.card-detail{font-size:11px;color:var(--muted);flex:1;}
+.card-actions{display:flex;align-items:center;gap:4px;}
+.edit-detail-btn,.delete-card-btn{background:none;border:none;cursor:pointer;padding:0;opacity:0;transition:opacity 0.15s;font-size:11px;line-height:1;}
+.card:hover .edit-detail-btn,.card:hover .delete-card-btn{opacity:1;}
+.edit-detail-btn{color:#555;}
+.edit-detail-btn:hover{color:var(--accent);}
+.delete-card-btn{color:#555;}
+.delete-card-btn:hover{color:#ef4444;}
+.card-meta{display:flex;align-items:center;justify-content:space-between;}
+.card-day{font-size:10px;color:#8c8c8c;letter-spacing:0.04em;}
+.card-day.overdue-text{color:rgba(239,68,68,0.65);}
+.card-day.soon-text{color:rgba(245,158,11,0.7);}
+.card-badges{display:flex;gap:5px;align-items:center;}
+.badge-yt{font-size:10px;color:#ef4444;cursor:pointer;opacity:0.7;transition:opacity 0.15s;text-decoration:none;line-height:1;}
+.badge-yt:hover{opacity:1;}
+.badge-note{font-size:10px;color:var(--muted);line-height:1;}
+.done-badge{position:absolute;top:8px;right:8px;font-size:9px;background:rgba(34,197,94,0.1);color:#22c55e;border-radius:4px;padding:2px 6px;letter-spacing:0.06em;font-weight:500;text-transform:uppercase;}
+.edited-badge{position:absolute;top:8px;right:8px;font-size:9px;background:rgba(168,85,247,0.12);color:#a855f7;border-radius:4px;padding:2px 6px;letter-spacing:0.06em;font-weight:500;text-transform:uppercase;}
+.card.edited::before{background:#a855f7;}
+.overdue-badge{position:absolute;bottom:7px;right:8px;font-size:9px;background:rgba(239,68,68,0.12);color:var(--overdue);border-radius:4px;padding:2px 6px;letter-spacing:0.06em;font-weight:500;text-transform:uppercase;}
+.soon-badge{position:absolute;bottom:7px;right:8px;font-size:9px;background:rgba(245,158,11,0.12);color:var(--soon);border-radius:4px;padding:2px 6px;letter-spacing:0.06em;font-weight:500;text-transform:uppercase;}
+.add-card-btn{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:6px;padding:8px;border:1px dashed #2e2e2e;border-radius:8px;background:transparent;color:var(--muted);font-family:var(--font-body);font-size:11px;cursor:pointer;width:100%;transition:all 0.15s;letter-spacing:0.04em;}
+.add-card-btn:hover{border-color:#555;color:var(--text);background:var(--surface);}
+.add-col-wrap{flex:0 0 auto;width:274px;align-self:flex-start;}
+.scroll-cue{flex:0 0 auto;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:0 24px;color:var(--muted);font-size:10px;letter-spacing:0.1em;text-transform:uppercase;opacity:0.5;align-self:center;user-select:none;}
+.scroll-cue-arrow{font-size:20px;animation:nudge 2s ease-in-out infinite;}
+@keyframes nudge{0%,100%{transform:translateX(0);}50%{transform:translateX(6px);}}
+.add-col-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:28px 16px;border:1px dashed #2a2a2a;border-radius:10px;background:transparent;color:var(--muted);font-family:var(--font-body);font-size:11px;cursor:pointer;width:100%;transition:all 0.15s;letter-spacing:0.06em;text-transform:uppercase;height:110px;}
+.add-col-btn:hover{border-color:#555;color:var(--text);background:var(--surface);}
+.add-col-plus{font-size:26px;line-height:1;}
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.72);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px);}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--surface);border:1px solid #333;border-radius:14px;padding:26px 26px 22px;width:380px;max-width:92vw;position:relative;animation:slideUp 0.2s ease;max-height:90vh;overflow-y:auto;}
+@keyframes slideUp{from{opacity:0;transform:translateY(12px);}to{opacity:1;transform:translateY(0);}}
+.modal-close{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);font-size:20px;cursor:pointer;line-height:1;}
+.modal-close:hover{color:var(--text);}
+.modal-tag{display:inline-block;margin-bottom:10px;}
+.modal-artist{font-family:var(--font-display);font-size:26px;letter-spacing:0.04em;margin-bottom:14px;}
+.modal-title{font-family:var(--font-display);font-size:22px;letter-spacing:0.04em;margin-bottom:16px;color:var(--accent);}
+.modal-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.modal-row-label{color:var(--muted);}
+.modal-row-val{color:var(--text);}
+.modal-field-row{padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.modal-field-label{color:var(--muted);margin-bottom:5px;font-size:11px;}
+.field-input-row{display:flex;gap:8px;align-items:center;}
+.field-input{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font-body);font-size:12px;color:var(--text);outline:none;transition:border-color 0.15s;}
+.field-input:focus{border-color:var(--accent);}
+.field-textarea{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:7px 10px;font-family:var(--font-body);font-size:12px;color:var(--text);outline:none;resize:vertical;min-height:62px;transition:border-color 0.15s;}
+.field-textarea:focus{border-color:var(--accent);}
+.field-select{flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-family:var(--font-body);font-size:12px;color:var(--text);outline:none;cursor:pointer;}
+.yt-link-display{font-size:11px;color:#ef4444;text-decoration:none;display:block;margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.yt-link-display:hover{text-decoration:underline;}
+.modal-actions{display:flex;gap:8px;margin-top:16px;}
+.btn{flex:1;padding:9px 14px;border-radius:7px;font-family:var(--font-body);font-size:12px;font-weight:500;cursor:pointer;transition:all 0.15s;border:none;}
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:#d4005a;}
+.btn-secondary{background:var(--surface2);color:var(--muted);border:1px solid var(--border);}
+.btn-secondary:hover{color:var(--text);border-color:#3a3a3a;}
+.btn-danger{background:#ef4444;color:#fff;}
+.btn-danger:hover{background:#dc2626;}
+.delete-confirm{display:none;margin-top:10px;}
+.delete-confirm-msg{font-size:11px;color:#ef4444;margin-bottom:8px;text-align:center;}
+.delete-confirm-btns{display:flex;gap:8px;}
+#activity-panel{position:fixed;top:0;right:0;bottom:0;width:300px;background:var(--surface);border-left:1px solid var(--border);z-index:150;transform:translateX(100%);transition:transform 0.25s ease;display:flex;flex-direction:column;}
+#activity-panel.open{transform:translateX(0);}
+.activity-header{padding:18px 20px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.activity-title{font-family:var(--font-display);font-size:18px;letter-spacing:0.06em;color:var(--accent);}
+.activity-close{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;}
+.activity-close:hover{color:var(--text);}
+.activity-list{flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:2px;}
+.activity-item{padding:8px 10px;border-radius:7px;}
+.activity-item:hover{background:var(--surface2);}
+.activity-text{font-size:12px;color:var(--text);line-height:1.45;}
+.activity-time{font-size:10px;color:var(--muted);margin-top:2px;}
+.activity-empty{font-size:12px;color:var(--muted);text-align:center;padding:32px 0;}
+::-webkit-scrollbar{width:6px;height:6px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px;}
+@media print {
+  body{background:#fff;color:#111;}
+  header,.filter-bar,.add-card-btn,.add-col-wrap,#activity-panel,#save-indicator,
+  #loading-screen,.sort-btn,.edit-detail-btn,.delete-card-btn,
+  .done-badge,.overdue-badge,.soon-badge,.card-badges{display:none !important;}
+  .progress-section{padding:8px 16px 0;}
+  .prog-card{border:1px solid #ddd;background:#fff;}
+  .prog-title,.prog-nums{color:#555;}
+  .prog-nums b{color:#111;}
+  .prog-bar-wrap{background:#eee;}
+  .board{padding:10px 14px;overflow:visible;flex-wrap:wrap;}
+  .column{width:210px;margin-right:10px;margin-bottom:14px;page-break-inside:avoid;}
+  .col-header{background:#f5f5f5;border:1px solid #ddd;border-bottom:2px solid #333;}
+  .col-title,.col-count{color:#111 !important;}
+  .col-date{color:#555 !important;}
+  .card{background:#fff;border:1px solid #ddd;}
+  .card::before{display:none;}
+  .card-artist,.card-detail,.card-day{color:#111 !important;}
+  .card-tag{border:1px solid #ccc;background:#f5f5f5 !important;color:#333 !important;}
+}
+
+/* ── SCOREBOARD (bottom-right) ──────────────────────────────── */
+#scoreboard{position:fixed;bottom:24px;right:28px;z-index:200;display:flex;flex-direction:column;gap:6px;pointer-events:none;}
+.score-row{display:flex;align-items:center;gap:10px;}
+.score-label{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted);width:62px;text-align:right;}
+.score-bar-wrap{width:100px;height:4px;background:var(--surface2);border-radius:2px;overflow:hidden;}
+.score-bar{height:100%;border-radius:2px;transition:width 0.8s cubic-bezier(0.4,0,0.2,1);}
+.score-num{font-family:var(--font-display);font-size:15px;letter-spacing:0.04em;min-width:28px;}
+@media print{#scoreboard{display:none;}}
+
+/* ── SEASON SWITCHER ─────────────────────────────────────────── */
+.season-switcher{display:flex;align-items:center;gap:3px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.season-btn{background:transparent;border:none;border-radius:6px;padding:5px 16px;font-family:var(--font-display);font-size:15px;letter-spacing:0.1em;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.season-btn.active{background:var(--accent);color:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.season-btn:not(.active):hover{color:var(--text);}
+
+/* ── CALENDAR VIEW ──────────────────────────────────────────── */
+.view-toggle{display:flex;align-items:center;gap:3px;margin-left:12px;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:3px;}
+.view-btn{background:transparent;border:none;border-radius:6px;padding:5px 11px;font-family:var(--font-body);font-size:12px;color:var(--muted);cursor:pointer;transition:all 0.15s;display:flex;align-items:center;gap:5px;}
+.view-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,0.4);}
+.view-btn:not(.active):hover{color:var(--text);}
+#calendar-view{display:none;padding:24px 32px 40px;}
+#calendar-view.visible{display:block;}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+.cal-month-label{font-family:var(--font-display);font-size:28px;letter-spacing:0.06em;color:var(--accent);}
+.cal-nav-btns{display:flex;gap:8px;align-items:center;}
+.cal-nav-btn{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:7px 16px;font-family:var(--font-body);font-size:13px;color:var(--muted);cursor:pointer;transition:all 0.15s;}
+.cal-nav-btn:hover{border-color:#555;color:var(--text);}
+.cal-today-btn{background:transparent;border:1px solid var(--border);border-radius:8px;padding:7px 14px;font-family:var(--font-body);font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.15s;letter-spacing:0.06em;text-transform:uppercase;}
+.cal-today-btn:hover{border-color:var(--accent);color:var(--accent);}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border-radius:12px;overflow:hidden;border:1px solid var(--border);}
+.cal-dow{background:var(--surface2);padding:10px 0;text-align:center;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);font-weight:500;}
+.cal-cell{background:var(--surface);min-height:116px;padding:8px;position:relative;transition:background 0.15s;vertical-align:top;}
+.cal-cell.other-month{background:#111;}
+.cal-cell.today{background:rgba(255,45,120,0.05);}
+.cal-cell.today .cal-day-num{color:var(--accent);font-weight:700;background:rgba(255,45,120,0.15);border-radius:50%;}
+.cal-day-num{font-size:12px;color:var(--muted);margin-bottom:5px;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border-radius:50%;}
+.cal-chips{display:flex;flex-direction:column;gap:3px;}
+.cal-chip{font-size:10px;padding:2px 6px;border-radius:4px;cursor:pointer;transition:all 0.15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5;font-weight:500;letter-spacing:0.01em;}
+.cal-chip:hover{filter:brightness(1.3);transform:translateY(-1px);}
+.cal-chip.perf{background:var(--perf-bg);color:var(--perf);border-left:2px solid var(--perf);}
+.cal-chip.int{background:var(--int-bg);color:var(--int);border-left:2px solid var(--int);}
+.cal-chip.shoot{background:var(--shoot-bg);color:var(--shoot);border-left:2px solid var(--shoot);}
+.cal-chip.done{background:var(--done-bg);color:var(--done);border-left:2px solid var(--done);opacity:0.55;}
+.cal-chip.overdue{background:rgba(239,68,68,0.12);color:var(--overdue);border-left:2px solid var(--overdue);}
+.cal-more{font-size:10px;color:var(--muted);margin-top:3px;cursor:default;letter-spacing:0.04em;padding-left:2px;}
+@media print{#calendar-view{display:none!important;}}
+
+/* ── BOARD WATERMARK ────────────────────────────────────────── */
+.board-watermark{position:fixed;bottom:40px;right:48px;width:320px;height:320px;pointer-events:none;z-index:10;opacity:0.13;mix-blend-mode:screen;filter:drop-shadow(0 0 40px rgba(255,45,120,0.08));}
+.board-watermark img{width:100%;height:100%;object-fit:contain;}
+@media print{.board-watermark{display:none;}}
+
+/* ── MINI DATE PICKER ────────────────────────────────────────── */
+#date-picker{position:fixed;z-index:500;background:var(--surface);border:1px solid #3a3a3a;border-radius:12px;padding:12px;width:234px;box-shadow:0 8px 32px rgba(0,0,0,0.6),0 2px 8px rgba(0,0,0,0.4);display:none;animation:slideUp 0.15s ease;user-select:none;}
+#date-picker.open{display:block;}
+.dp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.dp-month-label{font-family:var(--font-display);font-size:15px;letter-spacing:0.06em;color:var(--accent);}
+.dp-nav{background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:2px 7px;border-radius:5px;transition:color 0.15s;}
+.dp-nav:hover{color:var(--accent);}
+.dp-dow-row{display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;}
+.dp-dow{text-align:center;font-size:9px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);padding:2px 0;}
+.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;}
+.dp-day{text-align:center;padding:5px 2px;font-size:11px;border-radius:5px;cursor:pointer;color:var(--muted);transition:all 0.12s;line-height:1.2;}
+.dp-day:hover:not(.dp-empty){background:rgba(255,45,120,0.12);color:var(--accent);}
+.dp-day.dp-today{color:var(--accent);font-weight:700;}
+.dp-day.dp-selected{background:var(--accent);color:#fff;font-weight:700;}
+.dp-day.dp-other-month{opacity:0.22;}
+.dp-day.dp-empty{cursor:default;}
+.dp-clear{display:block;width:100%;margin-top:8px;padding:5px;background:transparent;border:1px dashed #333;border-radius:6px;font-family:var(--font-body);font-size:11px;color:var(--muted);cursor:pointer;transition:all 0.12s;letter-spacing:0.04em;}
+.dp-clear:hover{border-color:#555;color:var(--text);}
+
+/* ── COUNTDOWN TIMERS ────────────────────────────────────────── */
+.countdown{display:inline-flex;align-items:center;gap:3px;font-size:9px;font-weight:500;letter-spacing:0.06em;text-transform:uppercase;border-radius:4px;padding:2px 6px;margin-top:3px;}
+.countdown-today{background:rgba(255,45,120,0.15);color:var(--accent);}
+.countdown-tomorrow{background:rgba(245,158,11,0.15);color:var(--shoot);}
+.countdown-near{background:rgba(245,158,11,0.1);color:var(--shoot);}
+.countdown-normal{background:rgba(153,153,153,0.1);color:var(--muted);}
+.countdown-overdue{background:rgba(239,68,68,0.12);color:var(--overdue);}
+
+/* ── ARTIST VIEW ─────────────────────────────────────────────── */
+#artist-view{display:none;padding:20px 32px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+#artist-view.visible{display:flex;gap:0;align-items:flex-start;}
+
+/* ── TIMELINE / GANTT ────────────────────────────────────────── */
+#timeline-view{display:none;padding:20px 32px 40px;overflow-x:auto;-webkit-overflow-scrolling:touch;}
+#timeline-view.visible{display:block;}
+.tl-container{min-width:700px;}
+.tl-header-row{display:flex;padding-left:140px;margin-bottom:4px;border-bottom:1px solid var(--border);padding-bottom:8px;}
+.tl-date-col{min-width:68px;text-align:center;font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:var(--muted);flex-shrink:0;}
+.tl-date-col.tl-today{color:var(--accent);}
+.tl-row{display:flex;align-items:center;border-bottom:1px solid rgba(255,255,255,0.04);min-height:44px;transition:background 0.15s;}
+.tl-row:hover{background:rgba(255,255,255,0.02);}
+.tl-artist-label{width:140px;min-width:140px;font-size:11px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding-right:12px;flex-shrink:0;}
+.tl-cells{display:flex;flex:1;}
+.tl-cell{min-width:68px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;padding:4px 2px;}
+.tl-chip{font-size:9px;font-weight:500;letter-spacing:0.04em;text-transform:uppercase;border-radius:4px;padding:2px 6px;cursor:pointer;transition:all 0.15s;white-space:nowrap;max-width:64px;overflow:hidden;text-overflow:ellipsis;text-align:center;}
+.tl-chip:hover{filter:brightness(1.4);transform:scale(1.05);}
+.tl-chip.perf{background:var(--perf-bg);color:var(--perf);border-left:2px solid var(--perf);}
+.tl-chip.int{background:var(--int-bg);color:var(--int);border-left:2px solid var(--int);}
+.tl-chip.done{background:var(--done-bg);color:var(--done);border-left:2px solid var(--done);opacity:0.6;}
+.tl-chip.shoot{background:var(--shoot-bg);color:var(--shoot);border-left:2px solid var(--shoot);}
+
+/* ── MILESTONE BANNER ────────────────────────────────────────── */
+#milestone-banner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0.8);background:var(--surface);border:2px solid var(--accent);border-radius:20px;padding:32px 48px;text-align:center;z-index:9998;box-shadow:0 24px 80px rgba(0,0,0,0.7),0 0 60px rgba(255,45,120,0.12);opacity:0;pointer-events:none;transition:all 0.35s cubic-bezier(0.34,1.56,0.64,1);}
+#milestone-banner.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto;}
+.ms-pct{font-family:var(--font-display);font-size:72px;letter-spacing:0.04em;color:var(--accent);line-height:1;}
+.ms-label{font-size:13px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-top:6px;}
+.ms-dismiss{margin-top:18px;padding:8px 24px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:var(--font-body);font-size:12px;font-weight:500;cursor:pointer;letter-spacing:0.06em;}
+
+/* ── RESPONSIVE ─────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  header{padding:8px 16px;gap:8px;}
+  .header-right{gap:5px;flex-wrap:wrap;justify-content:flex-end !important;}
+  .ur-label{display:none;}
+  .ur-btn{padding:5px 8px;}
+  .view-toggle{margin-left:0;}
+  .view-btn{padding:4px 8px;font-size:11px;}
+  .header-btn{padding:5px 8px;font-size:11px;}
+  .filter-bar{padding:8px 12px;gap:5px;}
+  .filter-label{display:none;}
+  .filter-btn{padding:4px 10px;font-size:11px;}
+  .search-input{width:120px;}
+  .progress-section{padding:12px 16px 0;gap:10px;}
+  .prog-card{min-width:140px;padding:10px 12px;}
+  .board{padding:14px 12px 40px;}
+  .column{width:240px;margin-right:10px;}
+  #scoreboard{right:14px;bottom:16px;}
+  .score-label{font-size:9px;width:52px;}
+  .score-bar-wrap{width:72px;}
+  .score-num{font-size:13px;}
+  #calendar-view{padding:16px 12px 40px;}
+  .cal-cell{min-height:80px;}
+  .board-watermark{width:200px;height:200px;right:20px;bottom:20px;}
+}
+@media (max-width: 480px) {
+  header{padding:6px 10px;}
+  header svg{width:34px;height:34px;}
+  .header-right{gap:4px;}
+  .view-btn{padding:4px 7px;font-size:10px;}
+  .header-btn{font-size:10px;padding:4px 7px;}
+  .filter-bar{padding:6px 10px;gap:4px;overflow-x:auto;flex-wrap:nowrap;}
+  .filter-btn{padding:4px 8px;font-size:11px;white-space:nowrap;flex-shrink:0;}
+  .search-wrap{flex-shrink:0;}
+  .search-input{width:100px;font-size:11px;}
+  .board{padding:10px 8px 40px;}
+  .column{width:220px;margin-right:8px;}
+  .col-title{font-size:14px;}
+  .card{padding:8px 10px;}
+  .card-artist{font-size:12px;}
+  .card-tag{font-size:9px;padding:2px 5px;}
+  .card-detail{font-size:10px;}
+  .card-day{font-size:9px;}
+  #scoreboard{display:none;}
+  #activity-panel{width:100%;}
+  #calendar-view{padding:10px 8px 40px;}
+  .cal-month-label{font-size:20px;}
+  .cal-cell{min-height:60px;padding:4px;}
+  .cal-chip{font-size:9px;padding:1px 4px;}
+  .cal-day-num{font-size:10px;width:18px;height:18px;}
+  .board-watermark{width:120px;height:120px;right:8px;bottom:10px;opacity:0.08;}
+  #save-indicator{bottom:10px;right:10px;font-size:10px;padding:6px 10px;}
+}
+@media (max-width: 360px){.column{width:190px;}.filter-btn{font-size:10px;padding:3px 7px;}.view-btn{font-size:9px;}}
+</style>
 </head>
 <body>
-  <h1>KV Content Calendar</h1>
+<div id="loading-screen">
+  <div class="loading-logo">[KV'S CATALOGUE]</div>
+  <div class="loading-sub">Loading schedule…</div>
+  <div class="loading-dots"><div class="loading-dot"></div><div class="loading-dot"></div><div class="loading-dot"></div></div>
+</div>
+<div id="save-indicator"><div class="save-dot"></div><span id="save-text">Saving…</span></div>
+
+<div id="scoreboard">
+  <div class="score-row"><div class="score-label">Total</div><div class="score-bar-wrap"><div class="score-bar" id="sb-total-bar" style="background:var(--border);width:100%"></div></div><div class="score-num" id="sb-total" style="color:var(--text)">0</div></div>
+  <div class="score-row"><div class="score-label">Uploaded</div><div class="score-bar-wrap"><div class="score-bar" id="sb-done-bar" style="background:var(--int);width:0%"></div></div><div class="score-num" id="sb-done" style="color:var(--int)">0</div></div>
+  <div class="score-row"><div class="score-label">Queue</div><div class="score-bar-wrap"><div class="score-bar" id="sb-queue-bar" style="background:var(--shoot);width:0%"></div></div><div class="score-num" id="sb-queue" style="color:var(--shoot)">0</div></div>
+</div>
+
+<div id="activity-panel">
+  <div class="activity-header"><div class="activity-title">Activity</div><button class="activity-close" id="activity-close">&#x2715;</button></div>
+  <div class="activity-list" id="activity-list"><div class="activity-empty">No activity yet</div></div>
+</div>
+
+<header>
+  <div class="header-left">
+    <svg width="46" height="46" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="flex-shrink:0;">
+      <rect width="100" height="100" rx="12" fill="#111"/>
+      <rect x="4" y="4" width="92" height="92" rx="8" fill="#1a1a1a"/>
+      <rect x="4" y="4" width="92" height="4" rx="2" fill="#ff2d78" opacity="0.8"/>
+      <text x="51" y="59" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black',Impact,sans-serif" font-weight="900" font-size="50" fill="#0d0d0d" letter-spacing="3">KV</text>
+      <text x="50" y="58" text-anchor="middle" dominant-baseline="middle" font-family="'Arial Black',Impact,sans-serif" font-weight="900" font-size="50" fill="#ff2d78" letter-spacing="3">KV</text>
+    </svg>
+  </div>
+  <div class="header-center"><span style="font-family:var(--font-display);font-size:13px;letter-spacing:0.18em;color:var(--muted);text-transform:uppercase;">Content Calendar 2026</span></div>
+  <div class="header-right" style="justify-content:flex-end;">
+    <button class="ur-btn" id="undo-btn" disabled title="Undo (Ctrl+Z)">&#x21A9; <span class="ur-label">Undo</span></button>
+    <button class="ur-btn" id="redo-btn" disabled title="Redo (Ctrl+Y)">&#x21AA; <span class="ur-label">Redo</span></button>
+    <div class="view-toggle">
+      <button class="view-btn active" id="view-board-btn">&#x268F; Board</button>
+      <button class="view-btn" id="view-artist-btn">&#x1F464; Artist</button>
+      <button class="view-btn" id="view-timeline-btn">&#x1F4CA; Timeline</button>
+      <button class="view-btn" id="view-cal-btn">&#x1F4C5; Calendar</button>
+    </div>
+    <button class="header-btn" id="activity-toggle-btn">📋 Activity</button>
+  </div>
+</header>
+
+<div class="filter-bar">
+  <div class="season-switcher">
+    <button class="season-btn active" id="season-s1-btn">S1</button>
+    <button class="season-btn" id="season-s2-btn">S2</button>
+  </div>
+  <span class="filter-label" style="margin-left:4px;">Filter</span>
+  <button class="filter-btn active" data-filter="all">All</button>
+  <button class="filter-btn" data-filter="perf">MV / Release</button>
+  <button class="filter-btn" data-filter="shoot">Upcoming</button>
+  <button class="filter-btn" data-filter="edited" style="color:#a855f7;border-color:rgba(168,85,247,0.35);">Done Editing</button>
+  <button class="filter-btn" data-filter="done">Uploaded</button>
+  <button class="filter-btn" data-filter="overdue" style="color:#ef4444;border-color:rgba(239,68,68,0.35);">⚠ Overdue</button>
+  <div class="search-wrap">
+    <span class="search-icon">&#128269;</span>
+    <input class="search-input" id="search-input" type="text" placeholder="Search title…"/>
+  </div>
+</div>
+
+<div class="progress-section">
+  <div class="prog-card"><div class="prog-title">Overall progress</div><div class="prog-bar-wrap"><div class="prog-bar" id="bar-overall" style="background:var(--accent);width:0%"></div></div><div class="prog-nums"><b id="pn-overall">0</b> of <b id="pd-overall">0</b> uploaded</div></div>
+  <div class="prog-card"><div class="prog-title">Backlog artists</div><div class="prog-bar-wrap"><div class="prog-bar" id="bar-backlog" style="background:var(--perf);width:0%"></div></div><div class="prog-nums"><b id="pn-backlog">0</b> of <b id="pd-backlog">0</b> uploaded</div></div>
+  <div class="prog-card"><div class="prog-title">Pipeline</div><div class="prog-bar-wrap"><div class="prog-bar" id="bar-pipeline" style="background:var(--int);width:0%"></div></div><div class="prog-nums"><b id="pn-pipeline">0</b> of <b id="pd-pipeline">0</b> uploaded</div></div>
+</div>
+
+<div class="board" id="board"></div>
+<div id="artist-view"></div>
+<div id="timeline-view"></div>
+
+<div id="milestone-banner">
+  <div class="ms-pct" id="ms-pct-text">50%</div>
+  <div class="ms-label" id="ms-label-text">Uploaded</div>
+  <button class="ms-dismiss" id="ms-dismiss">Keep it up! 🔥</button>
+</div>
+
+<div id="calendar-view">
+  <div class="cal-nav">
+    <div class="cal-month-label" id="cal-month-label">March 2026</div>
+    <div class="cal-nav-btns">
+      <button class="cal-today-btn" id="cal-today-btn">Today</button>
+      <button class="cal-nav-btn" id="cal-prev-btn">&#8592;</button>
+      <button class="cal-nav-btn" id="cal-next-btn">&#8594;</button>
+    </div>
+  </div>
+  <div class="cal-grid" id="cal-grid"></div>
+</div>
+
+<div id="date-picker">
+  <div class="dp-header">
+    <button class="dp-nav" id="dp-prev">&#8592;</button>
+    <div class="dp-month-label" id="dp-month-label"></div>
+    <button class="dp-nav" id="dp-next">&#8594;</button>
+  </div>
+  <div class="dp-dow-row">
+    <div class="dp-dow">Su</div><div class="dp-dow">Mo</div><div class="dp-dow">Tu</div>
+    <div class="dp-dow">We</div><div class="dp-dow">Th</div><div class="dp-dow">Fr</div>
+    <div class="dp-dow">Sa</div>
+  </div>
+  <div class="dp-days" id="dp-days"></div>
+  <button class="dp-clear" id="dp-clear">Set as TBD</button>
+</div>
+
+<!-- MAIN MODAL -->
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <button class="modal-close" id="modal-close">&#x2715;</button>
+    <div class="card-tag modal-tag" id="m-tag"></div>
+    <div class="modal-artist" id="m-artist"></div>
+    <div class="modal-field-row"><div class="modal-field-label">Description</div><div class="field-input-row"><input class="field-input" id="m-detail-input" type="text"/><button class="btn btn-primary" id="m-save-btn" style="flex:0 0 auto;padding:6px 14px;font-size:11px;">Save</button></div></div>
+    <div class="modal-field-row"><div class="modal-field-label">YouTube URL <span style="color:#444;font-size:10px;">(paste when live)</span></div><input class="field-input" id="m-yt-input" type="url" placeholder="https://youtube.com/watch?v=…"/><a class="yt-link-display" id="m-yt-link" href="#" target="_blank" style="display:none;"></a></div>
+    <div class="modal-field-row"><div class="modal-field-label">Notes</div><textarea class="field-textarea" id="m-notes-input" placeholder="e.g. waiting on thumbnail, edit in progress…"></textarea></div>
+    <div class="modal-field-row"><div class="modal-field-label">Upload day</div><input class="field-input" id="m-day-input" type="text" placeholder="e.g. Tue Apr 8 or TBD"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Shoot date</div><input class="field-input" id="m-shoot-input" type="text" placeholder="e.g. Mar 21 or TBD"/></div>
+    <div class="modal-row"><span class="modal-row-label">Week</span><span class="modal-row-val" id="m-week"></span></div>
+    <div class="modal-row"><span class="modal-row-label">Status</span><span class="modal-row-val" id="m-status"></span></div>
+    <div class="modal-actions" id="modal-actions">
+      <button class="btn btn-primary" id="m-toggle-btn">Mark as uploaded</button>
+      <button class="btn btn-secondary" id="modal-close2">Close</button>
+    </div>
+    <div class="delete-confirm" id="delete-confirm">
+      <div class="delete-confirm-msg">Remove this card from the board?</div>
+      <div class="delete-confirm-btns">
+        <button class="btn btn-danger" id="m-delete-btn">Yes, delete</button>
+        <button class="btn btn-secondary" id="m-delete-cancel">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD CARD MODAL -->
+<div class="modal-overlay" id="add-card-overlay">
+  <div class="modal">
+    <button class="modal-close" id="add-card-close">&#x2715;</button>
+    <div class="modal-title">Add New Card</div>
+    <div class="modal-field-row"><div class="modal-field-label">Artist name *</div><input class="field-input" id="ac-artist" type="text" placeholder="e.g. Bamboo"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Description *</div><input class="field-input" id="ac-detail" type="text" placeholder="e.g. Performance / Song title"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Type</div><select class="field-select" id="ac-type"><option value="perf">Performance</option><option value="int">Interview</option><option value="shoot">Upcoming Shoot</option></select></div>
+    <div class="modal-field-row"><div class="modal-field-label">Upload day</div><input class="field-input" id="ac-day" type="text" placeholder="e.g. Mon Apr 7 or TBD"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Shoot date</div><input class="field-input" id="ac-shoot" type="text" placeholder="e.g. Mar 21"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Add to column</div><select class="field-select" id="ac-week"></select></div>
+    <div class="modal-actions"><button class="btn btn-primary" id="ac-submit">Add Card</button><button class="btn btn-secondary" id="add-card-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<!-- ADD COLUMN MODAL -->
+<div class="modal-overlay" id="add-col-overlay">
+  <div class="modal">
+    <button class="modal-close" id="add-col-close">&#x2715;</button>
+    <div class="modal-title">New Column</div>
+    <div class="modal-field-row"><div class="modal-field-label">Column name *</div><input class="field-input" id="acolname" type="text" placeholder="e.g. On Hold"/></div>
+    <div class="modal-field-row"><div class="modal-field-label">Date range / label</div><input class="field-input" id="acoldate" type="text" placeholder="e.g. Jul 2026"/></div>
+    <div class="modal-actions"><button class="btn btn-primary" id="acol-submit">Create Column</button><button class="btn btn-secondary" id="add-col-cancel">Cancel</button></div>
+  </div>
+</div>
+
+<div class="board-watermark">
+  <svg viewBox="0 0 200 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;">
+    <text x="100" y="95" text-anchor="middle" font-family="'Arial Black',Impact,sans-serif" font-weight="900" font-size="120" fill="#ff2d78" letter-spacing="10">KV</text>
+  </svg>
+</div>
+
+<script>
+// ========================= SEASON DATA =========================
+var WEEKS=[
+  {id:'w0',label:'Catalogue Backlog',date:'In Production',cards:[
+    {id:'bl1',artist:'KV & Loonie',detail:'Collab Track',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl2',artist:'KV feat. Hellmerry',detail:'Collab Track',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl3',artist:'KV',detail:'Can You Be Mine',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl4',artist:'KV',detail:'Aglio Olio',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl5',artist:'KV',detail:'Ngayong Gabi Uuwi Muli Sa Yakap Mo (City Girls)',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl6',artist:'KV',detail:'Mahalaga Ka',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl7',artist:'KV',detail:'Oldrnb',type:'perf',day:'TBD',shoot:'TBD'},
+    {id:'bl8',artist:'KV',detail:'Pantasya Album',type:'perf',day:'TBD',shoot:'TBD'}
+  ]},
+  {id:'w1',label:'Week 1',date:'Mar 25 – 30',cards:[
+    {id:'v1_01',artist:'KV',detail:'Be For Real (Official Music Video)',type:'perf',day:'Tue Mar 25',shoot:'TBD'},
+    {id:'v1_02',artist:'KV',detail:'Be For Real (Behind the Scenes)',type:'perf',day:'Thu Mar 27',shoot:'TBD'}
+  ]},
+  {id:'w2',label:'Week 2',date:'Apr 1 – 6',cards:[
+    {id:'v2_01',artist:'KV & Pino G',detail:'NN (Official Music Video)',type:'perf',day:'Tue Apr 1',shoot:'TBD'},
+    {id:'v2_02',artist:'KV & Pino G',detail:'NN (Behind the Scenes)',type:'perf',day:'Thu Apr 3',shoot:'TBD'}
+  ]},
+  {id:'w3',label:'Week 3',date:'Apr 7 – 13',cards:[
+    {id:'v3_01',artist:'KV',detail:'Paano Iiwasan (Single Release)',type:'perf',day:'Tue Apr 8',shoot:'TBD'},
+    {id:'v3_02',artist:'KV',detail:'Paano Iiwasan (Lyric Video)',type:'perf',day:'Thu Apr 10',shoot:'TBD'}
+  ]},
+  {id:'wup',label:'Upcoming Shoots',date:'',cards:[]}
+];
+
+var WEEKS_S2=[
+  {id:'s2_w0',label:'Catalogue Backlog',date:'In Production',cards:[]},
+  {id:'s2_w1',label:'Week 1',date:'TBD',cards:[]},
+  {id:'s2_wup',label:'Upcoming',date:'',cards:[]}
+];
+
+// ========================= STATE =========================
+var IS_AS=false; // Google Apps Script integration (future)
+var uploadedStatus={},editedStatus={},detailLabels={},deletedCards={},dayOverrides={},shootOverrides={};
+var youtubeLinks={},cardNotes={},cardWeekAssign={};
+var customWeeks=[],customCards=[],sortOrders={},activityLog=[],cardOrder={};
+var activeFilter='all',searchQuery='',activeCard=null,saveTimer=null;
+var currentSeason=1;
+var LSK='kv_music_state',LSDK='kv_music_deleted';
+var LSK_S2='kv_music_state_s2',LSDK_S2='kv_music_deleted_s2';
+var _hist=[],_hi=-1;
+var _milestoneShown={};
+var dpInputEl=null,dpFmt='upload',dpYear=2026,dpMonth=2;
+var currentView='board';
+var calYear=2026,calMonth=2;
+var dragSrcId=null;
+
+// ========================= UNDO/REDO =========================
+function _snap(){
+  return {
+    up:JSON.stringify(uploadedStatus),
+    ed:JSON.stringify(editedStatus),
+    dl:JSON.stringify(detailLabels),
+    dc:JSON.stringify(deletedCards),
+    dy:JSON.stringify(dayOverrides),
+    sh:JSON.stringify(shootOverrides),
+    yl:JSON.stringify(youtubeLinks),
+    cn:JSON.stringify(cardNotes),
+    cw:JSON.stringify(cardWeekAssign),
+    cwo:JSON.stringify(customWeeks),
+    cc:JSON.stringify(customCards),
+    so:JSON.stringify(sortOrders),
+    al:JSON.stringify(activityLog),
+    co:JSON.stringify(cardOrder)
+  };
+}
+function _apply(s){
+  uploadedStatus=JSON.parse(s.up);
+  editedStatus=JSON.parse(s.ed||'{}');
+  detailLabels=JSON.parse(s.dl);
+  deletedCards=JSON.parse(s.dc);
+  dayOverrides=JSON.parse(s.dy);
+  shootOverrides=JSON.parse(s.sh||'{}');
+  youtubeLinks=JSON.parse(s.yl||'{}');
+  cardNotes=JSON.parse(s.cn||'{}');
+  cardWeekAssign=JSON.parse(s.cw);
+  customWeeks=JSON.parse(s.cwo||'[]');
+  customCards=JSON.parse(s.cc||'[]');
+  sortOrders=JSON.parse(s.so||'{}');
+  activityLog=JSON.parse(s.al||'[]');
+  cardOrder=JSON.parse(s.co||'{}');
+  // restore card day/shoot from overrides
+  getAllCards().forEach(function(c){
+    if(dayOverrides[c.id])c.day=dayOverrides[c.id];
+    if(shootOverrides[c.id])c.shoot=shootOverrides[c.id];
+  });
+}
+function pushHistory(){
+  if(_hi<_hist.length-1)_hist=_hist.slice(0,_hi+1);
+  _hist.push(_snap());
+  if(_hist.length>80)_hist.shift();
+  _hi=_hist.length-1;
+  _upUR();
+}
+function _upUR(){
+  var u=document.getElementById('undo-btn'),r=document.getElementById('redo-btn');
+  if(u)u.disabled=(_hi<=0);
+  if(r)r.disabled=(_hi>=_hist.length-1);
+}
+
+// ========================= HELPERS =========================
+function getActiveBaseWeeks(){return currentSeason===1?WEEKS:WEEKS_S2;}
+function getAllWeeks(){return getActiveBaseWeeks().concat(customWeeks);}
+function getAllCards(){
+  var cs=[];
+  getActiveBaseWeeks().forEach(function(w){w.cards.forEach(function(c){cs.push(c);});});
+  customCards.forEach(function(c){cs.push(c);});
+  return cs;
+}
+function findCard(id){
+  var found=null;
+  getAllCards().forEach(function(c){if(c.id===id)found=c;});
+  return found;
+}
+function getOrigWeekId(c){
+  if(!c)return '';
+  var found='';
+  getActiveBaseWeeks().forEach(function(w){
+    w.cards.forEach(function(wc){if(wc.id===c.id)found=w.id;});
+  });
+  if(!found){
+    customWeeks.forEach(function(w){
+      w.cards.forEach(function(wc){if(wc.id===c.id)found=w.id;});
+    });
+  }
+  return found||'';
+}
+function getCardsForWeek(wid){
+  var cards=[];
+  var weeks=getAllWeeks();
+  var wk=weeks.filter(function(w){return w.id===wid;})[0];
+  if(wk)wk.cards.forEach(function(c){cards.push(c);});
+  // cards moved here
+  getAllCards().forEach(function(c){
+    if(cardWeekAssign[c.id]===wid&&getOrigWeekId(c)!==wid)cards.push(c);
+  });
+  // remove cards moved away
+  cards=cards.filter(function(c){
+    var orig=getOrigWeekId(c);
+    var assigned=cardWeekAssign[c.id];
+    if(assigned&&assigned!==wid)return false;
+    return true;
+  });
+  return cards;
+}
+function sortedCards(wid,cards){
+  var so=sortOrders[wid];
+  var ord=cardOrder[wid];
+  if(ord&&ord.length){
+    var byId={};cards.forEach(function(c){byId[c.id]=c;});
+    var res=[];
+    ord.forEach(function(id){if(byId[id])res.push(byId[id]);});
+    cards.forEach(function(c){if(res.indexOf(c)<0)res.push(c);});
+    return res;
+  }
+  if(so==='artist'){return cards.slice().sort(function(a,b){return a.artist.localeCompare(b.artist);});}
+  if(so==='day'){return cards.slice().sort(function(a,b){return parseDate(a.day)-parseDate(b.day);});}
+  return cards;
+}
+function tagLabel(t){
+  if(t==='perf')return 'MV Release';
+  if(t==='int')return 'Release';
+  if(t==='shoot')return 'Upcoming';
+  return t;
+}
+function parseDate(str){
+  if(!str||str==='TBD')return Infinity;
+  var months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  // "Mon Apr 7" or "Apr 7" or "Apr 7, 2025"
+  var m=str.match(/([A-Z][a-z]{2})\s+(\d+)/);
+  if(m){var yr=2026;var m2=str.match(/(\d{4})/);if(m2)yr=parseInt(m2[1]);return new Date(yr,months[m[1]]||0,parseInt(m[2])).getTime();}
+  return Infinity;
+}
+function getCountdown(c){
+  if(!c)return null;
+  var day=dayOverrides[c.id]||c.day;
+  if(!day||day==='TBD')return null;
+  var ts=parseDate(day);
+  if(ts===Infinity)return null;
+  var now=new Date();now.setHours(0,0,0,0);
+  var diff=Math.round((ts-now.getTime())/(1000*60*60*24));
+  if(diff<0)return {text:(Math.abs(diff)===1?'1 day ago':Math.abs(diff)+' days ago'),cls:'cd-overdue'};
+  if(diff===0)return {text:'Today!',cls:'cd-today'};
+  if(diff===1)return {text:'Tomorrow',cls:'cd-soon'};
+  if(diff<=7)return {text:'In '+diff+' days',cls:'cd-soon'};
+  return {text:'In '+diff+' days',cls:'cd-ok'};
+}
+function getCardStatus(c){
+  if(uploadedStatus[c.id])return 'done';
+  var day=dayOverrides[c.id]||c.day;
+  if(!day||day==='TBD')return 'ok';
+  var ts=parseDate(day);
+  if(ts===Infinity)return 'ok';
+  var now=new Date();now.setHours(0,0,0,0);
+  var diff=Math.round((ts-now.getTime())/(1000*60*60*24));
+  if(diff<0)return 'overdue';
+  if(diff<=7)return 'soon';
+  return 'ok';
+}
+
+// ========================= AUTO-DATE SLOTS =========================
+// Each scheduled week has upload slots: position in the column = upload date
+// Hardcoded to match the exact intended schedule
+var WEEK_SLOTS={
+  'w1':['Tue Mar 25','Thu Mar 27'],
+  'w2':['Tue Apr 1','Thu Apr 3'],
+  'w3':['Tue Apr 8','Thu Apr 10']
+};
+function getWeekSlots(wid){return WEEK_SLOTS[wid]||null;}
+// Assign dates from slots to cards based on their sorted position
+function autoAssignDates(wid,sortedAllCards){
+  var slots=getWeekSlots(wid);
+  if(!slots)return;
+  sortedAllCards.forEach(function(c,i){
+    var newDay=i<slots.length?slots[i]:'TBD';
+    dayOverrides[c.id]=newDay;
+    c.day=newDay;
+  });
+}
+
+// ========================= PERSISTENCE =========================
+function persistState(){
+  var stKey=currentSeason===1?LSK:LSK_S2;
+  var delKey=currentSeason===1?LSDK:LSDK_S2;
+  try{
+    var sv={
+      up:uploadedStatus,ed:editedStatus,dl:detailLabels,dy:dayOverrides,sh:shootOverrides,
+      yl:youtubeLinks,cn:cardNotes,cw:cardWeekAssign,
+      cwo:customWeeks,cc:customCards,so:sortOrders,al:activityLog,co:cardOrder
+    };
+    localStorage.setItem(stKey,JSON.stringify(sv));
+    var dids=Object.keys(deletedCards).filter(function(k){return deletedCards[k];});
+    localStorage.setItem(delKey,JSON.stringify(dids));
+    showSave('saved');
+  } catch(e){showSave('error');}
+}
+function showSave(st){
+  var el=document.getElementById('save-indicator');
+  var tx=document.getElementById('save-text');
+  if(!el)return;
+  el.className='visible '+st;
+  tx.textContent=st==='saved'?'Saved':st==='saving'?'Saving\u2026':'Error saving';
+  clearTimeout(saveTimer);
+  saveTimer=setTimeout(function(){el.className='';},2000);
+}
+function initBoard(sv){
+  if(!sv)return;
+  if(sv.up)Object.assign(uploadedStatus,sv.up);
+  if(sv.ed)Object.assign(editedStatus,sv.ed);
+  if(sv.dl)Object.assign(detailLabels,sv.dl);
+  if(sv.dy)Object.assign(dayOverrides,sv.dy);
+  if(sv.sh)Object.assign(shootOverrides,sv.sh);
+  if(sv.yl)Object.assign(youtubeLinks,sv.yl);
+  if(sv.cn)Object.assign(cardNotes,sv.cn);
+  if(sv.cw)Object.assign(cardWeekAssign,sv.cw);
+  if(sv.cwo&&sv.cwo.length)customWeeks=sv.cwo;
+  if(sv.cc&&sv.cc.length)customCards=sv.cc;
+  if(sv.so)Object.assign(sortOrders,sv.so);
+  if(sv.al&&sv.al.length)activityLog=sv.al;
+  if(sv.co)Object.assign(cardOrder,sv.co);
+  // apply overrides to card objects
+  getAllCards().forEach(function(c){
+    if(dayOverrides[c.id])c.day=dayOverrides[c.id];
+    if(shootOverrides[c.id])c.shoot=shootOverrides[c.id];
+  });
+}
+
+// ========================= SEASON SWITCH =========================
+function updateSeasonUI(){
+  var b1=document.getElementById('season-s1-btn');
+  var b2=document.getElementById('season-s2-btn');
+  if(b1)b1.classList.toggle('active',currentSeason===1);
+  if(b2)b2.classList.toggle('active',currentSeason===2);
+}
+function switchSeason(n){
+  if(n===currentSeason)return;
+  persistState();
+  currentSeason=n;
+  uploadedStatus={};editedStatus={};detailLabels={};deletedCards={};dayOverrides={};shootOverrides={};
+  youtubeLinks={};cardNotes={};cardWeekAssign={};
+  customWeeks=[];customCards=[];sortOrders={};activityLog=[];cardOrder={};
+  _milestoneShown={};
+  activeFilter='all';searchQuery='';
+  var si=document.getElementById('search-input');if(si)si.value='';
+  document.querySelectorAll('.filter-btn').forEach(function(b){
+    b.classList.toggle('active',b.dataset.filter==='all');
+  });
+  getActiveBaseWeeks().forEach(function(w){
+    w.cards.forEach(function(c){detailLabels[c.id]=c.detail;});
+  });
+  if(n===1){
+    ['u1','u2','u3','u4','u5','u6','d1','d2','d3'].forEach(function(id){
+      uploadedStatus[id]=true;
+    });
+  }
+  var stKey=n===1?LSK:LSK_S2;
+  var delKey=n===1?LSDK:LSDK_S2;
+  var saved=null;
+  try{var raw=localStorage.getItem(stKey);if(raw)saved=JSON.parse(raw);}catch(e){}
+  var dels=null;
+  try{var rd=localStorage.getItem(delKey);if(rd)dels=JSON.parse(rd);}catch(e){}
+  initBoard(saved);
+  if(dels&&dels.length){dels.forEach(function(id){deletedCards[id]=true;});}
+  _hist=[_snap()];_hi=0;_upUR();
+  updateSeasonUI();
+  renderBoard();
+  updateStats();
+}
+
+// ========================= STATS =========================
+function updateStats(){
+  var all=getAllCards().filter(function(c){return !deletedCards[c.id];});
+  var done=all.filter(function(c){return uploadedStatus[c.id];}).length;
+  var total=all.length;
+  var pct=total?Math.round(done/total*100):0;
+
+  // overall
+  setBar('bar-overall','pn-overall','pd-overall',done,total,pct);
+
+  // backlog (w0 / s2_w0)
+  var bwid=currentSeason===1?'w0':'s2_w0';
+  var bCards=getCardsForWeek(bwid).filter(function(c){return !deletedCards[c.id];});
+  var bDone=bCards.filter(function(c){return uploadedStatus[c.id];}).length;
+  setBar('bar-backlog','pn-backlog','pd-backlog',bDone,bCards.length,bCards.length?Math.round(bDone/bCards.length*100):0);
+
+  // pipeline
+  var pipeWids=currentSeason===1?['w1','w2','w3']:['s2_w1'];
+  var pCards=[];
+  pipeWids.forEach(function(wid){
+    getCardsForWeek(wid).forEach(function(c){if(!deletedCards[c.id])pCards.push(c);});
+  });
+  var pDone=pCards.filter(function(c){return uploadedStatus[c.id];}).length;
+  setBar('bar-pipeline','pn-pipeline','pd-pipeline',pDone,pCards.length,pCards.length?Math.round(pDone/pCards.length*100):0);
+
+  // scoreboard
+  var sbt=document.getElementById('sb-total');
+  var sbd=document.getElementById('sb-done');
+  var sbq=document.getElementById('sb-queue');
+  var sbtb=document.getElementById('sb-total-bar');
+  var sdtb=document.getElementById('sb-done-bar');
+  var sqtb=document.getElementById('sb-queue-bar');
+  if(sbt)sbt.textContent=total;
+  if(sbd)sbd.textContent=done;
+  if(sbq)sbq.textContent=total-done;
+  if(sdtb)sdtb.style.width=(total?Math.round(done/total*100):0)+'%';
+  if(sqtb)sqtb.style.width=(total?Math.round((total-done)/total*100):0)+'%';
+
+  checkMilestones(done,total);
+}
+function setBar(barId,numId,denId,done,total,pct){
+  var b=document.getElementById(barId);
+  var n=document.getElementById(numId);
+  var d=document.getElementById(denId);
+  if(b)b.style.width=pct+'%';
+  if(n)n.textContent=done;
+  if(d)d.textContent=total;
+}
+
+// ========================= MILESTONE / CONFETTI =========================
+function triggerConfetti(){
+  var colors=['#ff2d78','#3b82f6','#22c55e','#f59e0b','#ec4899','#8b5cf6','#ffffff'];
+  for(var i=0;i<180;i++){
+    (function(){
+      var el=document.createElement('div');
+      el.style.cssText='position:fixed;top:-10px;z-index:9999;pointer-events:none;border-radius:2px;';
+      el.style.left=Math.random()*100+'vw';
+      el.style.width=(6+Math.random()*8)+'px';
+      el.style.height=(8+Math.random()*14)+'px';
+      el.style.background=colors[Math.floor(Math.random()*colors.length)];
+      el.style.opacity=0.9;
+      document.body.appendChild(el);
+      var dur=2200+Math.random()*2200;
+      var xDrift=(Math.random()-0.5)*320;
+      var start=null;
+      function animate(ts){
+        if(!start)start=ts;
+        var p=(ts-start)/dur;
+        if(p>=1){el.remove();return;}
+        var y=p*110;
+        var x=xDrift*p;
+        var rot=p*720*(Math.random()>0.5?1:-1);
+        el.style.transform='translate('+x+'vw,'+y+'vh) rotate('+rot+'deg)';
+        el.style.opacity=p>0.8?(1-p)*5:0.9;
+        requestAnimationFrame(animate);
+      }
+      requestAnimationFrame(animate);
+    })();
+  }
+}
+function checkMilestones(done,total){
+  if(!total)return;
+  var pct=done/total;
+  [0.25,0.5,0.75,1.0].forEach(function(p){
+    var key=currentSeason+'_'+p;
+    if(pct>=p&&!_milestoneShown[key]){
+      _milestoneShown[key]=true;
+      triggerMilestone(Math.round(p*100),done,total);
+    }
+  });
+}
+function triggerMilestone(pct,done,total){
+  for(var i=0;i<3;i++){
+    (function(delay){setTimeout(triggerConfetti,delay);})(i*600);
+  }
+  var banner=document.getElementById('milestone-banner');
+  var pctEl=document.getElementById('ms-pct-text');
+  var lblEl=document.getElementById('ms-label-text');
+  if(!banner)return;
+  if(pctEl)pctEl.textContent=pct+'%';
+  if(lblEl){
+    if(pct===100)lblEl.textContent='All '+total+' videos uploaded! \ud83c\udf89';
+    else lblEl.textContent=done+' of '+total+' uploaded';
+  }
+  banner.classList.add('show');
+  setTimeout(function(){banner.classList.remove('show');},5000);
+}
+
+// ========================= RENDER BOARD =========================
+function applyFilterSearch(cards){
+  return cards.filter(function(c){
+    if(deletedCards[c.id])return false;
+    var et=uploadedStatus[c.id]?'done':editedStatus[c.id]?'edited':c.type;
+    if(activeFilter!=='all'&&activeFilter!=='overdue'&&et!==activeFilter)return false;
+    if(activeFilter==='overdue'){
+      var st=getCardStatus(c);
+      if(st!=='overdue')return false;
+    }
+    if(searchQuery){
+      var q=searchQuery.toLowerCase();
+      var artist=(c.artist||'').toLowerCase();
+      var det=(detailLabels[c.id]||c.detail||'').toLowerCase();
+      if(artist.indexOf(q)<0&&det.indexOf(q)<0)return false;
+    }
+    return true;
+  });
+}
+function renderBoard(){
+  if(currentView!=='board')return;
+  var board=document.getElementById('board');
+  if(!board)return;
+  board.innerHTML='';
+  var weeks=getAllWeeks();
+  weeks.forEach(function(wk){
+    var allCards=getCardsForWeek(wk.id).filter(function(c){return !deletedCards[c.id];});
+    var sorted=sortedCards(wk.id,allCards);
+    // Auto-assign dates from week slots (position = priority = date)
+    autoAssignDates(wk.id,sorted);
+    var visible=applyFilterSearch(sorted);
+    var col=document.createElement('div');
+    col.className='column';
+
+    var hdr=document.createElement('div');
+    hdr.className='col-header';
+    var so=sortOrders[wk.id]||'default';
+    hdr.innerHTML='<div class="col-title-wrap"><div class="col-title">'+wk.label+'</div>'+(wk.date?'<div class="col-date">'+wk.date+'</div>':'')+'</div>'+
+      '<div class="col-right">'+
+      '<div class="col-count">'+visible.length+'</div>'+
+      '<button class="sort-btn" data-week="'+wk.id+'" data-sort="add" title="Add card">\uFF0B</button>'+
+      '</div>';
+    col.appendChild(hdr);
+
+    var cardsEl=document.createElement('div');
+    cardsEl.className='col-cards';
+    cardsEl.dataset.week=wk.id;
+    setupDropZone(cardsEl);
+
+    visible.forEach(function(c){
+      var cardEl=buildCardEl(c,wk.id);
+      cardsEl.appendChild(cardEl);
+    });
+    col.appendChild(cardsEl);
+
+    // add card button at bottom
+    var addBtn=document.createElement('button');
+    addBtn.className='add-card-btn';
+    addBtn.dataset.week=wk.id;
+    addBtn.textContent='+ Add card';
+    addBtn.addEventListener('click',function(){openAddCard(wk.id);});
+    col.appendChild(addBtn);
+
+    board.appendChild(col);
+  });
+
+  // Add column button
+  var addColBtn=document.createElement('div');
+  addColBtn.className='add-col-btn';
+  addColBtn.innerHTML='<button class="header-btn" id="add-col-trigger">\uFF0B Column</button>';
+  addColBtn.querySelector('button').addEventListener('click',function(){
+    document.getElementById('add-col-overlay').classList.add('open');
+  });
+  board.appendChild(addColBtn);
+
+  updateStats();
+}
+
+function buildCardEl(c,wid){
+  var up=uploadedStatus[c.id];
+  var et=up?'done':c.type;
+  var st=getCardStatus(c);
+  var cd=getCountdown(c);
+
+  var ed=editedStatus[c.id];
+  var card=document.createElement('div');
+  card.className='card '+(up?'done':ed?'edited':c.type);
+  card.dataset.id=c.id;
+  card.draggable=true;
+
+  var badge='';
+  if(up)badge='<div class="done-badge">\u2713 Uploaded</div>';
+  else if(ed)badge='<div class="edited-badge">\u2713 Done Editing</div>';
+  else if(st==='overdue')badge='<div class="overdue-badge">\u26a0 Overdue</div>';
+  else if(st==='soon')badge='<div class="soon-badge">\u23f0 This week</div>';
+
+  var dayTxt=dayOverrides[c.id]||c.day||'TBD';
+  var shootTxt=shootOverrides[c.id]||c.shoot||'TBD';
+  var dayClass='card-day'+(st==='overdue'&&!up?' overdue':'');
+  var notesEl=cardNotes[c.id]?'<div class="card-note">\u{1F4AC} '+escHtml(cardNotes[c.id].substring(0,60))+'</div>':'';
+  var ytEl=youtubeLinks[c.id]?'<div class="card-yt">\u25B6 <a href="'+escHtml(youtubeLinks[c.id])+'" target="_blank" onclick="event.stopPropagation();">Watch</a></div>':'';
+  var cdEl=cd?'<div class="countdown '+cd.cls+'">'+cd.text+'</div>':'';
+
+  card.innerHTML=badge+
+    '<div class="card-top">'+
+    '<div class="card-artist">'+escHtml(c.artist)+'</div>'+
+    (et==='done'||ed?'':'<div class="card-tag '+et+'">'+tagLabel(et)+'</div>')+
+    '</div>'+
+    '<div class="card-detail-wrap"><span class="card-detail">'+escHtml(detailLabels[c.id]||c.detail)+'</span></div>'+
+    '<div class="card-meta">'+
+    '<div class="'+dayClass+'">\ud83d\udcc5 '+escHtml(dayTxt)+'</div>'+
+    '</div>'+
+    notesEl+ytEl+cdEl;
+
+  card.addEventListener('click',function(){openCard(c.id);});
+  card.addEventListener('dragstart',function(e){
+    dragSrcId=c.id;
+    e.dataTransfer.setData('text/plain',c.id);
+    e.dataTransfer.effectAllowed='move';
+    setTimeout(function(){card.classList.add('dragging');},0);
+  });
+  card.addEventListener('dragend',function(){
+    card.classList.remove('dragging');
+    document.querySelectorAll('.drop-placeholder').forEach(function(p){p.remove();});
+  });
+  return card;
+}
+
+function escHtml(s){
+  if(!s)return '';
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function setupDropZone(cardsEl){
+  cardsEl.addEventListener('dragover',function(e){
+    e.preventDefault();
+    e.dataTransfer.dropEffect='move';
+    cardsEl.classList.add('drag-over');
+    // Remove existing placeholders
+    document.querySelectorAll('.drop-placeholder').forEach(function(p){p.remove();});
+    // Find insertion point
+    var ph=document.createElement('div');
+    ph.className='drop-placeholder';
+    var cardEls=cardsEl.querySelectorAll('.card:not(.dragging)');
+    var inserted=false;
+    for(var i=0;i<cardEls.length;i++){
+      var rect=cardEls[i].getBoundingClientRect();
+      if(e.clientY<rect.top+rect.height/2){
+        cardsEl.insertBefore(ph,cardEls[i]);
+        inserted=true;break;
+      }
+    }
+    if(!inserted)cardsEl.appendChild(ph);
+  });
+  cardsEl.addEventListener('dragleave',function(e){
+    if(!cardsEl.contains(e.relatedTarget)){
+      cardsEl.classList.remove('drag-over');
+      document.querySelectorAll('.drop-placeholder').forEach(function(p){p.remove();});
+    }
+  });
+  cardsEl.addEventListener('drop',function(e){
+    e.preventDefault();
+    cardsEl.classList.remove('drag-over');
+    document.querySelectorAll('.drop-placeholder').forEach(function(p){p.remove();});
+    var did=e.dataTransfer.getData('text/plain');
+    if(!did)return;
+    var twid=cardsEl.dataset.week;
+    var srcWid=cardWeekAssign[did]||getOrigWeekId(findCard(did));
+    // Find drop target card
+    var dropTarget=null;
+    var cardEls=cardsEl.querySelectorAll('.card:not(.dragging)');
+    for(var ci=0;ci<cardEls.length;ci++){
+      var rect=cardEls[ci].getBoundingClientRect();
+      if(e.clientY<rect.top+rect.height/2){dropTarget=cardEls[ci].dataset.id;break;}
+    }
+    if(srcWid!==twid){
+      cardWeekAssign[did]=twid;
+      var fc=findCard(did);
+      var wk=getAllWeeks().filter(function(w){return w.id===twid;})[0];
+      // Date auto-assigns from slot position via renderBoard → autoAssignDates
+      logActivity('\u21c6 '+(fc?fc.artist:did)+' moved to '+(wk?wk.label:twid));
+    }
+    var curCards=getCardsForWeek(twid).filter(function(c){return !deletedCards[c.id];});
+    var ordered=sortedCards(twid,curCards).map(function(c){return c.id;});
+    ordered=ordered.filter(function(id){return id!==did;});
+    if(dropTarget){
+      var idx=ordered.indexOf(dropTarget);
+      if(idx>=0)ordered.splice(idx,0,did);
+      else ordered.push(did);
+    } else {
+      ordered.push(did);
+    }
+    cardOrder[twid]=ordered;
+    pushHistory();renderBoard();persistState();
+  });
+}
+
+// ========================= ARTIST VIEW =========================
+function getSeasonEnder(){return currentSeason===1?'KV':''}
+function renderArtistView(){
+  var view=document.getElementById('artist-view');
+  if(!view)return;
+  view.innerHTML='';
+  var all=getAllCards().filter(function(c){return !deletedCards[c.id];});
+  var byArtist={};
+  all.forEach(function(c){
+    var a=c.artist||'Unknown';
+    if(!byArtist[a])byArtist[a]=[];
+    byArtist[a].push(c);
+  });
+  // Order by first appearance in schedule
+  var artistOrder=[];var seen={};
+  getActiveBaseWeeks().forEach(function(wk){
+    wk.cards.forEach(function(c){if(!seen[c.artist]){seen[c.artist]=true;artistOrder.push(c.artist);}});
+  });
+  Object.keys(byArtist).forEach(function(a){if(!seen[a])artistOrder.push(a);});
+  var seasonEnder=getSeasonEnder();
+
+  // ---- Roster strip ----
+  var roster=document.createElement('div');
+  roster.style.cssText='padding:16px 32px 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--border);margin-bottom:4px;';
+  var rLabel=document.createElement('span');
+  rLabel.style.cssText='font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--muted);margin-right:4px;flex-shrink:0;';
+  rLabel.textContent='Season '+(currentSeason===1?'1':'2')+' Lineup \u2014';
+  roster.appendChild(rLabel);
+  artistOrder.forEach(function(artist,i){
+    if(!byArtist[artist])return;
+    var isEnder=seasonEnder&&artist===seasonEnder;
+    var chip=document.createElement('div');
+    chip.style.cssText='display:inline-flex;align-items:center;gap:5px;background:'+(isEnder?'rgba(255,45,120,0.1)':'var(--surface2)')+';border:1px solid '+(isEnder?'var(--accent)':'var(--border)')+';border-radius:20px;padding:4px 11px;font-size:11px;color:'+(isEnder?'var(--accent)':'var(--text)')+';cursor:pointer;transition:all 0.15s;white-space:nowrap;';
+    chip.innerHTML='<span style="color:var(--muted);font-size:10px;">'+(i+1)+'</span> '+escHtml(artist)+(isEnder?' <span style="font-size:9px;letter-spacing:0.06em;opacity:0.85;">\u2605</span>':'');
+    chip.title=isEnder?artist+' \u2014 Season Ender':artist;
+    chip.addEventListener('click',function(){
+      var col=view.querySelector('[data-artist-col="'+artist.replace(/"/g,'&quot;')+'"]');
+      if(col)col.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+    });
+    chip.addEventListener('mouseenter',function(){this.style.borderColor=isEnder?'var(--accent)':'#444';this.style.color=isEnder?'var(--accent)':'var(--text)';});
+    chip.addEventListener('mouseleave',function(){this.style.borderColor=isEnder?'var(--accent)':'var(--border)';});
+    roster.appendChild(chip);
+  });
+  view.appendChild(roster);
+
+  // ---- Artist columns ----
+  var wrap=document.createElement('div');
+  wrap.style.cssText='display:flex;gap:0;padding:16px 32px 40px;overflow-x:auto;align-items:flex-start;';
+  artistOrder.forEach(function(artist){
+    var cards=byArtist[artist];if(!cards)return;
+    var isEnder=seasonEnder&&artist===seasonEnder;
+    var doneCount=cards.filter(function(c){return uploadedStatus[c.id];}).length;
+    var allDone=doneCount===cards.length;
+    var col=document.createElement('div');
+    col.className='column';
+    col.dataset.artistCol=artist;
+    if(isEnder){col.style.cssText='flex:0 0 auto;width:274px;margin-right:14px;box-shadow:0 0 0 2px rgba(232,255,71,0.6),0 0 28px rgba(255,45,120,0.12);border-radius:10px;';}
+    var enderBadge=isEnder?'<span style="display:inline-flex;align-items:center;gap:3px;background:var(--accent);color:#000;font-size:9px;font-weight:700;letter-spacing:0.08em;padding:2px 7px;border-radius:10px;">\u2605 SEASON ENDER</span>':'';
+    col.innerHTML='<div class="col-header" style="border-radius:'+(isEnder?'10px 10px 0 0':'')+';">'+
+      '<div class="col-title-wrap">'+
+      '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">'+
+      '<div class="col-title" style="font-size:13px;letter-spacing:0.04em;">'+escHtml(artist)+'</div>'+
+      enderBadge+
+      '</div>'+
+      '<div class="col-date">'+(allDone?'\u2713 All uploaded':doneCount+'/'+cards.length+' uploaded')+'</div>'+
+      '</div><div class="col-right"><div class="col-count">'+cards.length+'</div></div></div>';
+    var cardsEl=document.createElement('div');
+    cardsEl.className='col-cards';
+    cards.forEach(function(c){var el=buildCardEl(c,'');cardsEl.appendChild(el);});
+    col.appendChild(cardsEl);
+    wrap.appendChild(col);
+  });
+  view.appendChild(wrap);
+}
+
+// ========================= TIMELINE VIEW =========================
+function getTimelineDates(){
+  var dates=[];
+  var seen={};
+  getAllCards().filter(function(c){return !deletedCards[c.id];}).forEach(function(c){
+    var d=dayOverrides[c.id]||c.day;
+    if(!d||d==='TBD')return;
+    var ts=parseDate(d);
+    if(ts===Infinity)return;
+    var key=new Date(ts).toISOString().split('T')[0];
+    if(!seen[key]){seen[key]=true;dates.push({key:key,ts:ts,label:d.replace(/^[A-Z][a-z]{2} /,'')});}
+  });
+  dates.sort(function(a,b){return a.ts-b.ts;});
+  return dates;
+}
+function renderTimeline(){
+  var view=document.getElementById('timeline-view');
+  if(!view)return;
+  view.innerHTML='';
+  var dates=getTimelineDates();
+  if(!dates.length){
+    view.innerHTML='<div style="padding:40px 32px;color:var(--muted);text-align:center;">No upload dates set yet.</div>';
+    return;
+  }
+  // Group cards by artist
+  var all=getAllCards().filter(function(c){return !deletedCards[c.id];});
+  var artists=[];
+  var artistSeen={};
+  all.forEach(function(c){if(!artistSeen[c.artist]){artistSeen[c.artist]=true;artists.push(c.artist);}});
+  artists.sort();
+
+  var wrap=document.createElement('div');
+  wrap.style.cssText='padding:20px 32px 40px;overflow-x:auto;';
+
+  var table=document.createElement('table');
+  table.style.cssText='border-collapse:collapse;min-width:100%;';
+
+  // Header row
+  var thead=document.createElement('thead');
+  var hrow=document.createElement('tr');
+  hrow.innerHTML='<th style="text-align:left;padding:8px 12px;font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;white-space:nowrap;background:var(--surface2);border:1px solid var(--border);position:sticky;left:0;z-index:2;">Artist</th>';
+  dates.forEach(function(d){
+    var th=document.createElement('th');
+    th.style.cssText='padding:6px 10px;font-size:10px;color:var(--muted);letter-spacing:0.06em;white-space:nowrap;background:var(--surface2);border:1px solid var(--border);min-width:70px;text-align:center;';
+    th.textContent=d.label;
+    hrow.appendChild(th);
+  });
+  thead.appendChild(hrow);
+  table.appendChild(thead);
+
+  // Body
+  var tbody=document.createElement('tbody');
+  artists.forEach(function(artist){
+    var tr=document.createElement('tr');
+    var td0=document.createElement('td');
+    td0.style.cssText='padding:6px 12px;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;background:var(--surface);border:1px solid var(--border);position:sticky;left:0;z-index:1;';
+    td0.textContent=artist;
+    tr.appendChild(td0);
+
+    var artistCards=all.filter(function(c){return c.artist===artist;});
+    dates.forEach(function(d){
+      var td=document.createElement('td');
+      td.style.cssText='padding:4px 6px;border:1px solid var(--border);background:var(--surface);vertical-align:top;';
+      var matching=artistCards.filter(function(c){
+        var day=dayOverrides[c.id]||c.day;
+        if(!day||day==='TBD')return false;
+        var ts=parseDate(day);
+        if(ts===Infinity)return false;
+        return new Date(ts).toISOString().split('T')[0]===d.key;
+      });
+      matching.forEach(function(c){
+        var chip=document.createElement('div');
+        var up=uploadedStatus[c.id];
+        var bg=up?'var(--done-bg)':c.type==='perf'?'var(--perf-bg)':c.type==='int'?'var(--int-bg)':'var(--shoot-bg)';
+        var fg=up?'var(--done)':c.type==='perf'?'var(--perf)':c.type==='int'?'var(--int)':'var(--shoot)';
+        chip.style.cssText='background:'+bg+';color:'+fg+';border-radius:4px;padding:3px 6px;font-size:10px;margin:2px;white-space:nowrap;cursor:pointer;border:1px solid '+fg+';';
+        chip.textContent=(up?'\u2713 ':'')+tagLabel(c.type);
+        chip.title=c.artist+': '+(detailLabels[c.id]||c.detail);
+        chip.addEventListener('click',function(){openCard(c.id);});
+        td.appendChild(chip);
+      });
+      tr.appendChild(td);
+    });
+    tbody.appendChild(tr);
+  });
+  table.appendChild(tbody);
+  wrap.appendChild(table);
+  view.appendChild(wrap);
+}
+
+// ========================= CALENDAR VIEW =========================
+function renderCalendar(){
+  var grid=document.getElementById('cal-grid');
+  var lbl=document.getElementById('cal-month-label');
+  if(!grid)return;
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  if(lbl)lbl.textContent=months[calMonth]+' '+calYear;
+  grid.innerHTML='';
+  // DOW headers
+  ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].forEach(function(d){
+    var hd=document.createElement('div');
+    hd.className='cal-dow';hd.textContent=d;grid.appendChild(hd);
+  });
+  var firstDay=new Date(calYear,calMonth,1).getDay();
+  var daysInMonth=new Date(calYear,calMonth+1,0).getDate();
+  // Build card map by date string
+  var cardMap={};
+  getAllCards().filter(function(c){return !deletedCards[c.id];}).forEach(function(c){
+    var d=dayOverrides[c.id]||c.day;
+    if(!d||d==='TBD')return;
+    var ts=parseDate(d);
+    if(ts===Infinity)return;
+    var dt=new Date(ts);
+    if(dt.getFullYear()===calYear&&dt.getMonth()===calMonth){
+      var key=dt.getDate();
+      if(!cardMap[key])cardMap[key]=[];
+      cardMap[key].push(c);
+    }
+  });
+  for(var i=0;i<firstDay;i++){
+    var emp=document.createElement('div');emp.className='cal-cell empty';grid.appendChild(emp);
+  }
+  var today=new Date();
+  for(var d=1;d<=daysInMonth;d++){
+    var cell=document.createElement('div');
+    cell.className='cal-cell';
+    var isToday=today.getFullYear()===calYear&&today.getMonth()===calMonth&&today.getDate()===d;
+    if(isToday)cell.classList.add('today');
+    var dnum=document.createElement('div');
+    dnum.className='cal-day-num'+(isToday?' today':'');
+    dnum.textContent=d;cell.appendChild(dnum);
+    if(cardMap[d]){
+      cardMap[d].forEach(function(c){
+        var chip=document.createElement('div');
+        var up=uploadedStatus[c.id];
+        var cls='cal-chip '+(up?'done':c.type);
+        chip.className=cls;
+        chip.textContent=(up?'\u2713 ':'')+escHtml(c.artist);
+        chip.title=(detailLabels[c.id]||c.detail);
+        chip.addEventListener('click',function(e){e.stopPropagation();openCard(c.id);});
+        cell.appendChild(chip);
+      });
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// ========================= SWITCH VIEW =========================
+function switchView(v){
+  currentView=v;
+  var board=document.getElementById('board');
+  var artistView=document.getElementById('artist-view');
+  var timelineView=document.getElementById('timeline-view');
+  var calView=document.getElementById('calendar-view');
+  var progSection=document.querySelector('.progress-section');
+
+  [board,artistView,timelineView,calView].forEach(function(el){if(el)el.style.display='none';});
+
+  document.querySelectorAll('.view-btn').forEach(function(b){b.classList.remove('active');});
+
+  if(v==='board'){
+    if(board){board.style.display='flex';}
+    if(progSection)progSection.style.display='flex';
+    var btn=document.getElementById('view-board-btn');if(btn)btn.classList.add('active');
+    renderBoard();
+  } else if(v==='artist'){
+    if(artistView){artistView.style.display='block';}
+    if(progSection)progSection.style.display='none';
+    var btn=document.getElementById('view-artist-btn');if(btn)btn.classList.add('active');
+    renderArtistView();
+  } else if(v==='timeline'){
+    if(timelineView){timelineView.style.display='block';}
+    if(progSection)progSection.style.display='none';
+    var btn=document.getElementById('view-timeline-btn');if(btn)btn.classList.add('active');
+    renderTimeline();
+  } else if(v==='cal'){
+    if(calView){calView.style.display='block';}
+    if(progSection)progSection.style.display='none';
+    var btn=document.getElementById('view-cal-btn');if(btn)btn.classList.add('active');
+    renderCalendar();
+  }
+}
+
+// ========================= DATE PICKER =========================
+function openDatePicker(inputEl,fmt){
+  dpInputEl=inputEl;dpFmt=fmt;
+  var now=dpParseCurrent(inputEl.value,fmt);
+  dpYear=now.year;dpMonth=now.month;
+  var picker=document.getElementById('date-picker');
+  if(!picker)return;
+  var rect=inputEl.getBoundingClientRect();
+  picker.style.top=(rect.bottom+window.scrollY+4)+'px';
+  picker.style.left=Math.min(rect.left,window.innerWidth-230)+'px';
+  picker.style.display='block';
+  dpRender();
+}
+function closeDatePicker(){
+  var picker=document.getElementById('date-picker');
+  if(picker)picker.style.display='none';
+  dpInputEl=null;
+}
+function dpParseCurrent(val,fmt){
+  var months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var now=new Date();
+  if(val&&val!=='TBD'){
+    var m=val.match(/([A-Z][a-z]{2})\s+(\d+)/);
+    if(m&&months[m[1]]!==undefined)return {year:now.getFullYear(),month:months[m[1]],day:parseInt(m[2])};
+  }
+  return {year:now.getFullYear(),month:now.getMonth(),day:null};
+}
+function dpRender(){
+  var lbl=document.getElementById('dp-month-label');
+  var daysEl=document.getElementById('dp-days');
+  if(!lbl||!daysEl)return;
+  var monthNames=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  lbl.textContent=monthNames[dpMonth]+' '+dpYear;
+  daysEl.innerHTML='';
+  var firstDay=new Date(dpYear,dpMonth,1).getDay();
+  var daysInMonth=new Date(dpYear,dpMonth+1,0).getDate();
+  var cur=dpInputEl?dpParseCurrent(dpInputEl.value,dpFmt):{year:0,month:-1,day:null};
+  for(var i=0;i<firstDay;i++){
+    var emp=document.createElement('div');emp.className='dp-day empty';daysEl.appendChild(emp);
+  }
+  for(var d=1;d<=daysInMonth;d++){
+    var btn=document.createElement('button');
+    btn.className='dp-day'+(cur.year===dpYear&&cur.month===dpMonth&&cur.day===d?' selected':'');
+    btn.textContent=d;
+    (function(day){
+      btn.addEventListener('click',function(){
+        if(!dpInputEl)return;
+        dpInputEl.value=dpFormat(dpYear,dpMonth,day,dpFmt);
+        dpInputEl.dispatchEvent(new Event('change'));
+        closeDatePicker();
+      });
+    })(d);
+    daysEl.appendChild(btn);
+  }
+}
+function dpFormat(year,month,day,fmt){
+  var dows=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  var months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  var dt=new Date(year,month,day);
+  if(fmt==='upload')return dows[dt.getDay()]+' '+months[month]+' '+day;
+  return months[month]+' '+day;
+}
+
+// ========================= ACTIVITY LOG =========================
+function logActivity(msg){
+  activityLog.unshift({msg:msg,time:new Date().toLocaleTimeString()});
+  if(activityLog.length>50)activityLog=activityLog.slice(0,50);
+  renderActivityLog();
+}
+function renderActivityLog(){
+  var el=document.getElementById('activity-list');
+  if(!el)return;
+  if(!activityLog.length){el.innerHTML='<div class="activity-empty">No activity yet</div>';return;}
+  el.innerHTML=activityLog.map(function(a){
+    return '<div class="activity-item"><div class="activity-msg">'+escHtml(a.msg)+'</div><div class="activity-time">'+a.time+'</div></div>';
+  }).join('');
+}
+
+// ========================= MODAL =========================
+function openCard(id){
+  var c=findCard(id);
+  if(!c)return;
+  activeCard=id;
+  var wid=cardWeekAssign[id]||getOrigWeekId(c);
+  var wk=getAllWeeks().filter(function(w){return w.id===wid;})[0];
+  var up=uploadedStatus[id];
+  var st=getCardStatus(c);
+
+  var tag=document.getElementById('m-tag');
+  var art=document.getElementById('m-artist');
+  var di=document.getElementById('m-detail-input');
+  var yi=document.getElementById('m-yt-input');
+  var yl=document.getElementById('m-yt-link');
+  var ni=document.getElementById('m-notes-input');
+  var dyi=document.getElementById('m-day-input');
+  var shi=document.getElementById('m-shoot-input');
+  var wkEl=document.getElementById('m-week');
+  var stEl=document.getElementById('m-status');
+  var tb=document.getElementById('m-toggle-btn');
+  var dc=document.getElementById('delete-confirm');
+
+  if(tag){tag.textContent=tagLabel(c.type);tag.className='card-tag modal-tag '+c.type;}
+  if(art)art.textContent=c.artist;
+  if(di)di.value=detailLabels[id]||c.detail;
+  if(yi)yi.value=youtubeLinks[id]||'';
+  if(yl){
+    var ytUrl=youtubeLinks[id];
+    yl.href=ytUrl||'#';
+    yl.style.display=ytUrl?'block':'none';
+    yl.textContent=ytUrl?'Watch on YouTube':'';
+  }
+  if(ni)ni.value=cardNotes[id]||'';
+  if(dyi){
+    dyi.value=dayOverrides[id]||c.day||'TBD';
+    dyi.onclick=function(){openDatePicker(dyi,'upload');};
+  }
+  if(shi){
+    shi.value=shootOverrides[id]||c.shoot||'TBD';
+    shi.onclick=function(){openDatePicker(shi,'shoot');};
+  }
+  if(wkEl)wkEl.textContent=wk?wk.label:'';
+  var ed=editedStatus[id];
+  if(stEl){
+    if(up)stEl.innerHTML='<span style="color:var(--int)">\u2713 Uploaded</span>';
+    else if(ed)stEl.innerHTML='<span style="color:#a855f7">\u2713 Done Editing</span>';
+    else if(st==='overdue')stEl.innerHTML='<span style="color:var(--overdue)">\u26a0 Overdue</span>';
+    else if(st==='soon')stEl.innerHTML='<span style="color:var(--soon)">\u23f0 This week</span>';
+    else stEl.textContent='Scheduled';
+  }
+  if(tb){
+    if(up){tb.textContent='Revert to done editing';tb.className='btn btn-secondary';}
+    else if(ed){tb.textContent='Mark as uploaded';tb.className='btn btn-primary';}
+    else{tb.textContent='Mark as done editing';tb.className='btn btn-primary';tb.style.background='#a855f7';tb.style.borderColor='#a855f7';}
+  }
+  if(dc)dc.style.display='none';
+
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal(){
+  document.getElementById('modal-overlay').classList.remove('open');
+  closeDatePicker();
+  activeCard=null;
+}
+function openAddCard(wid){
+  var sel=document.getElementById('ac-week');
+  if(sel){
+    sel.innerHTML='';
+    getAllWeeks().forEach(function(w){
+      var opt=document.createElement('option');
+      opt.value=w.id;opt.textContent=w.label;
+      if(w.id===wid)opt.selected=true;
+      sel.appendChild(opt);
+    });
+  }
+  document.getElementById('ac-artist').value='';
+  document.getElementById('ac-detail').value='';
+  document.getElementById('ac-day').value='TBD';
+  document.getElementById('ac-shoot').value='TBD';
+  document.getElementById('add-card-overlay').classList.add('open');
+}
+
+// ========================= EVENT LISTENERS =========================
+document.addEventListener('DOMContentLoaded',function(){
+  // Init data labels
+  WEEKS.forEach(function(w){w.cards.forEach(function(c){detailLabels[c.id]=c.detail;});});
+  WEEKS_S2.forEach(function(w){w.cards.forEach(function(c){detailLabels[c.id]=c.detail;});});
+
+  // Pre-seed Season 1 uploaded
+  // No pre-seeded uploads — all content starts as Scheduled
+
+  // Load state from localStorage
+  var saved=null;
+  try{var raw=localStorage.getItem(LSK);if(raw)saved=JSON.parse(raw);}catch(e){}
+  var dels=null;
+  try{var rd=localStorage.getItem(LSDK);if(rd)dels=JSON.parse(rd);}catch(e){}
+  initBoard(saved);
+  if(dels&&dels.length)dels.forEach(function(id){deletedCards[id]=true;});
+
+  _hist=[_snap()];_hi=0;_upUR();
+  updateSeasonUI();
+
+  // Hide loading screen
+  setTimeout(function(){
+    var ls=document.getElementById('loading-screen');
+    if(ls)ls.classList.add('hidden');
+    switchView('board');
+    calMonth=(new Date()).getMonth();
+    calYear=(new Date()).getFullYear();
+  },600);
+
+  // ---- UNDO / REDO ----
+  document.getElementById('undo-btn').addEventListener('click',function(){
+    if(_hi>0){_hi--;_apply(_hist[_hi]);_upUR();renderBoard();renderActivityLog();updateStats();}
+  });
+  document.getElementById('redo-btn').addEventListener('click',function(){
+    if(_hi<_hist.length-1){_hi++;_apply(_hist[_hi]);_upUR();renderBoard();renderActivityLog();updateStats();}
+  });
+  document.addEventListener('keydown',function(e){
+    if((e.ctrlKey||e.metaKey)&&e.key==='z'&&!e.shiftKey){
+      e.preventDefault();
+      if(_hi>0){_hi--;_apply(_hist[_hi]);_upUR();renderBoard();renderActivityLog();updateStats();}
+    }
+    if((e.ctrlKey||e.metaKey)&&(e.key==='y'||(e.key==='z'&&e.shiftKey))){
+      e.preventDefault();
+      if(_hi<_hist.length-1){_hi++;_apply(_hist[_hi]);_upUR();renderBoard();renderActivityLog();updateStats();}
+    }
+  });
+
+  // ---- VIEW BUTTONS ----
+  document.getElementById('view-board-btn').addEventListener('click',function(){switchView('board');});
+  document.getElementById('view-artist-btn').addEventListener('click',function(){switchView('artist');});
+  document.getElementById('view-timeline-btn').addEventListener('click',function(){switchView('timeline');});
+  document.getElementById('view-cal-btn').addEventListener('click',function(){switchView('cal');});
+
+  // ---- SEASON SWITCH ----
+  document.getElementById('season-s1-btn').addEventListener('click',function(){switchSeason(1);});
+  document.getElementById('season-s2-btn').addEventListener('click',function(){switchSeason(2);});
+
+  // ---- FILTER ----
+  document.querySelectorAll('.filter-btn').forEach(function(btn){
+    btn.addEventListener('click',function(){
+      activeFilter=btn.dataset.filter;
+      document.querySelectorAll('.filter-btn').forEach(function(b){
+        b.classList.toggle('active',b.dataset.filter===activeFilter);
+      });
+      if(currentView==='board')renderBoard();
+    });
+  });
+
+  // ---- SEARCH ----
+  document.getElementById('search-input').addEventListener('input',function(){
+    searchQuery=this.value.trim();
+    if(currentView==='board')renderBoard();
+  });
+
+  // ---- SORT BUTTONS (delegated) ----
+  document.getElementById('board').addEventListener('click',function(e){
+    var sb=e.target.closest('.sort-btn');
+    if(!sb)return;
+    var wid=sb.dataset.week;var sort=sb.dataset.sort;
+    if(sort==='add'){openAddCard(wid);return;}
+    if(sortOrders[wid]===sort)sortOrders[wid]='default';
+    else sortOrders[wid]=sort;
+    pushHistory();renderBoard();persistState();
+  });
+
+  // ---- MODAL ACTIONS ----
+  document.getElementById('modal-close').addEventListener('click',closeModal);
+  document.getElementById('modal-close2').addEventListener('click',closeModal);
+  document.getElementById('modal-overlay').addEventListener('click',function(e){
+    if(e.target===this)closeModal();
+  });
+
+  document.getElementById('m-toggle-btn').addEventListener('click',function(){
+    if(!activeCard)return;
+    var c=findCard(activeCard);
+    var name=c?(c.artist+' \u2013 '+(detailLabels[activeCard]||c.detail)):'';
+    var up=uploadedStatus[activeCard];
+    var ed=editedStatus[activeCard];
+    if(up){
+      // Uploaded → revert to Done Editing
+      uploadedStatus[activeCard]=false;
+      editedStatus[activeCard]=true;
+      logActivity('\u21ba Reverted to editing: '+name);
+    } else if(ed){
+      // Done Editing → Uploaded
+      uploadedStatus[activeCard]=true;
+      logActivity('\u2713 Uploaded: '+name);
+    } else {
+      // Scheduled → Done Editing
+      editedStatus[activeCard]=true;
+      logActivity('\u2713 Done editing: '+name);
+    }
+    pushHistory();closeModal();renderBoard();updateStats();persistState();
+  });
+
+  document.getElementById('m-save-btn').addEventListener('click',function(){
+    if(!activeCard)return;
+    var di=document.getElementById('m-detail-input');
+    if(di)detailLabels[activeCard]=di.value;
+    var yi=document.getElementById('m-yt-input');
+    if(yi)youtubeLinks[activeCard]=yi.value;
+    var ni=document.getElementById('m-notes-input');
+    if(ni)cardNotes[activeCard]=ni.value;
+    var dyi=document.getElementById('m-day-input');
+    if(dyi){
+      dayOverrides[activeCard]=dyi.value;
+      var c=findCard(activeCard);if(c)c.day=dyi.value;
+    }
+    var shi=document.getElementById('m-shoot-input');
+    if(shi){
+      shootOverrides[activeCard]=shi.value;
+      var c=findCard(activeCard);if(c)c.shoot=shi.value;
+    }
+    pushHistory();renderBoard();updateStats();persistState();
+    openCard(activeCard); // refresh modal
+  });
+
+  document.getElementById('m-day-input').addEventListener('change',function(){
+    if(!activeCard)return;
+    dayOverrides[activeCard]=this.value;
+    var c=findCard(activeCard);if(c)c.day=this.value;
+  });
+  document.getElementById('m-shoot-input').addEventListener('change',function(){
+    if(!activeCard)return;
+    shootOverrides[activeCard]=this.value;
+    var c=findCard(activeCard);if(c)c.shoot=this.value;
+  });
+
+  // Delete card
+  document.getElementById('m-delete-btn').addEventListener('click',function(){
+    if(!activeCard)return;
+    deletedCards[activeCard]=true;
+    var c=findCard(activeCard);
+    if(c)logActivity('\u{1F5D1} Deleted: '+c.artist);
+    pushHistory();closeModal();renderBoard();updateStats();persistState();
+  });
+  document.getElementById('m-delete-cancel').addEventListener('click',function(){
+    document.getElementById('delete-confirm').style.display='none';
+  });
+  // Show delete confirm on right-click card (handled via context of modal - add delete btn)
+  // Add a delete trigger in modal actions
+  var modalActions=document.getElementById('modal-actions');
+  if(modalActions){
+    var delTrigger=document.createElement('button');
+    delTrigger.className='btn btn-danger';
+    delTrigger.textContent='Delete card';
+    delTrigger.addEventListener('click',function(){
+      document.getElementById('delete-confirm').style.display='block';
+    });
+    modalActions.appendChild(delTrigger);
+  }
+
+  // ---- ADD CARD MODAL ----
+  document.getElementById('add-card-close').addEventListener('click',function(){
+    document.getElementById('add-card-overlay').classList.remove('open');
+  });
+  document.getElementById('add-card-cancel').addEventListener('click',function(){
+    document.getElementById('add-card-overlay').classList.remove('open');
+  });
+  document.getElementById('add-card-overlay').addEventListener('click',function(e){
+    if(e.target===this)this.classList.remove('open');
+  });
+  document.getElementById('ac-submit').addEventListener('click',function(){
+    var artist=document.getElementById('ac-artist').value.trim();
+    var detail=document.getElementById('ac-detail').value.trim();
+    if(!artist||!detail){alert('Artist and description are required.');return;}
+    var type=document.getElementById('ac-type').value;
+    var day=document.getElementById('ac-day').value||'TBD';
+    var shoot=document.getElementById('ac-shoot').value||'TBD';
+    var wid=document.getElementById('ac-week').value;
+    var id='cc_'+Date.now();
+    var card={id:id,artist:artist,detail:detail,type:type,day:day,shoot:shoot};
+    customCards.push(card);
+    detailLabels[id]=detail;
+    cardWeekAssign[id]=wid;
+    logActivity('+ Added: '+artist+' \u2013 '+detail);
+    pushHistory();
+    document.getElementById('add-card-overlay').classList.remove('open');
+    renderBoard();updateStats();persistState();
+  });
+
+  // ---- ADD COLUMN MODAL ----
+  document.getElementById('add-col-close').addEventListener('click',function(){
+    document.getElementById('add-col-overlay').classList.remove('open');
+  });
+  document.getElementById('add-col-cancel').addEventListener('click',function(){
+    document.getElementById('add-col-overlay').classList.remove('open');
+  });
+  document.getElementById('add-col-overlay').addEventListener('click',function(e){
+    if(e.target===this)this.classList.remove('open');
+  });
+  document.getElementById('acol-submit').addEventListener('click',function(){
+    var name=document.getElementById('acolname').value.trim();
+    if(!name){alert('Column name required.');return;}
+    var date=document.getElementById('acoldate').value.trim();
+    var id='cw_'+Date.now();
+    customWeeks.push({id:id,label:name,date:date,cards:[]});
+    logActivity('+ New column: '+name);
+    pushHistory();
+    document.getElementById('add-col-overlay').classList.remove('open');
+    renderBoard();persistState();
+  });
+
+  // ---- ACTIVITY PANEL ----
+  document.getElementById('activity-toggle-btn').addEventListener('click',function(){
+    var panel=document.getElementById('activity-panel');
+    panel.classList.toggle('open');
+    renderActivityLog();
+  });
+  document.getElementById('activity-close').addEventListener('click',function(){
+    document.getElementById('activity-panel').classList.remove('open');
+  });
+
+  // ---- CALENDAR NAV ----
+  document.getElementById('cal-prev-btn').addEventListener('click',function(){
+    calMonth--;if(calMonth<0){calMonth=11;calYear--;}renderCalendar();
+  });
+  document.getElementById('cal-next-btn').addEventListener('click',function(){
+    calMonth++;if(calMonth>11){calMonth=0;calYear++;}renderCalendar();
+  });
+  document.getElementById('cal-today-btn').addEventListener('click',function(){
+    var now=new Date();calMonth=now.getMonth();calYear=now.getFullYear();renderCalendar();
+  });
+
+  // ---- DATE PICKER ----
+  document.getElementById('dp-prev').addEventListener('click',function(){
+    dpMonth--;if(dpMonth<0){dpMonth=11;dpYear--;}dpRender();
+  });
+  document.getElementById('dp-next').addEventListener('click',function(){
+    dpMonth++;if(dpMonth>11){dpMonth=0;dpYear++;}dpRender();
+  });
+  document.getElementById('dp-clear').addEventListener('click',function(){
+    if(dpInputEl){dpInputEl.value='TBD';dpInputEl.dispatchEvent(new Event('change'));}
+    closeDatePicker();
+  });
+  document.addEventListener('click',function(e){
+    var picker=document.getElementById('date-picker');
+    if(!picker||picker.style.display==='none')return;
+    if(!picker.contains(e.target)&&e.target!==dpInputEl)closeDatePicker();
+  });
+
+  // ---- MILESTONE DISMISS ----
+  document.getElementById('ms-dismiss').addEventListener('click',function(){
+    document.getElementById('milestone-banner').classList.remove('show');
+  });
+});
+</script>
 </body>
-  </html>
+</html>
