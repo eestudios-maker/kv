@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>KV Catalogue</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <style>
 :root {
   --bg:        #fdf0f5;
@@ -150,6 +152,26 @@ header {
   background: var(--accent-h);
   transform: translateY(-1px);
   box-shadow: 0 6px 18px rgba(212,84,122,0.28);
+}
+.sync-pill {
+  font-size: 10px; letter-spacing: 0.06em;
+  padding: 5px 11px; border-radius: 20px;
+  border: 1px solid var(--border);
+  display: flex; align-items: center; gap: 5px;
+  white-space: nowrap; transition: all 0.3s;
+  color: var(--faint); background: var(--bg);
+  user-select: none;
+}
+.sync-pill .sp-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--faint); flex-shrink: 0;
+  transition: background 0.3s;
+}
+.sync-pill.live { color: var(--live); border-color: rgba(22,163,74,0.25); background: rgba(22,163,74,0.06); }
+.sync-pill.live .sp-dot { background: var(--live); animation: pulse-dot 2s ease-in-out infinite; }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.5; transform: scale(0.8); }
 }
 
 /* ── STATS ────────────────────────────────────────────── */
@@ -498,6 +520,7 @@ header {
     <div class="brand-title">KV <em>Catalogue</em></div>
   </div>
   <div class="header-r">
+    <div class="sync-pill" id="sync-pill"><div class="sp-dot"></div><span id="sync-txt">local</span></div>
     <div class="date-pill" id="today-pill"></div>
     <button class="add-btn" id="add-btn" aria-label="Add new release">+ Add Release</button>
   </div>
@@ -629,6 +652,17 @@ header {
 </div>
 
 <script>
+// ── FIREBASE CONFIG — paste your config values here ────────────────────────
+var FIREBASE_CONFIG = {
+  apiKey:            'AIzaSyCTTZhDu-qHmIWSurpuHsj9KYMRf6LMWrw',
+  authDomain:        'kv-catalogue.firebaseapp.com',
+  projectId:         'kv-catalogue',
+  storageBucket:     'kv-catalogue.firebasestorage.app',
+  messagingSenderId: '467324216893',
+  appId:             '1:467324216893:web:517d47c2cc145ca23dac54'
+};
+// ───────────────────────────────────────────────────────────────────────────
+
 var LSK = 'kv_catalogue_v2';
 
 var SEED = [
@@ -652,20 +686,61 @@ var q          = '';
 var eid        = null;
 var cur_status = 'backlog';
 var toastTimer = null;
+var db         = null;
+var DB_DOC     = 'catalogue/releases';
 
 // ── persistence ────────────────────────────────────────────────────────────
 function uid() { return 'x' + Date.now() + Math.random().toString(36).slice(2,6); }
 
+function setSyncStatus(live) {
+  var pill = document.getElementById('sync-pill');
+  var txt  = document.getElementById('sync-txt');
+  if (!pill) return;
+  if (live) { pill.className = 'sync-pill live'; txt.textContent = 'live sync'; }
+  else       { pill.className = 'sync-pill';      txt.textContent = 'local'; }
+}
+
 function save() {
   try { localStorage.setItem(LSK, JSON.stringify(data)); } catch(e) {}
+  if (db) {
+    db.doc(DB_DOC).set({ releases: data }).catch(function(e) {
+      console.error('Firestore save failed:', e);
+    });
+  }
   toast('Saved \u2713');
 }
+
 function load() {
   try {
     var raw = localStorage.getItem(LSK);
     if (raw) { data = JSON.parse(raw); return; }
   } catch(e) {}
   data = SEED.map(function(x){ return Object.assign({}, x); });
+}
+
+function initFirebase() {
+  if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'PASTE_HERE') return;
+  try {
+    firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore();
+    db.doc(DB_DOC).onSnapshot(function(snap) {
+      if (snap.exists) {
+        data = snap.data().releases || [];
+        try { localStorage.setItem(LSK, JSON.stringify(data)); } catch(e) {}
+      } else {
+        // First ever open — seed the database with starter data
+        db.doc(DB_DOC).set({ releases: data });
+      }
+      setSyncStatus(true);
+      render();
+    }, function(err) {
+      console.warn('Firestore error:', err);
+      setSyncStatus(false);
+    });
+  } catch(e) {
+    console.warn('Firebase init failed:', e);
+    setSyncStatus(false);
+  }
 }
 function toast(msg) {
   var el = document.getElementById('toast');
@@ -909,6 +984,7 @@ document.addEventListener('DOMContentLoaded', function() {
     new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
 
   load();
+  initFirebase();
 
   setTimeout(function() {
     document.getElementById('loading').classList.add('gone');
