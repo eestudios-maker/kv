@@ -702,9 +702,9 @@ function countdownLabel(dateStr, status) {
 // ── filter ─────────────────────────────────────────────────────────────────
 function filtered() {
   return data.filter(function(r) {
-    if (flt === '__live')    return r.status === 'live';
-    if (flt === '__backlog') return r.status === 'backlog';
-    if (flt !== 'all' && r.type !== flt) return false;
+    if (flt === '__live'    && r.status !== 'live')    return false;
+    if (flt === '__backlog' && r.status !== 'backlog') return false;
+    if (flt !== 'all' && flt !== '__live' && flt !== '__backlog' && r.type !== flt) return false;
     if (q) {
       var lq = q.toLowerCase();
       if ((r.title||'').toLowerCase().indexOf(lq) < 0 &&
@@ -958,11 +958,6 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 });
 </script>
-
-</div>
-
-
-
 
 </body>
 </html>
