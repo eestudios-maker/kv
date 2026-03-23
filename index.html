@@ -692,12 +692,12 @@ var DB_DOC     = 'catalogue/releases';
 // ── persistence ────────────────────────────────────────────────────────────
 function uid() { return 'x' + Date.now() + Math.random().toString(36).slice(2,6); }
 
-function setSyncStatus(live) {
+function setSyncStatus(live, errCode) {
   var pill = document.getElementById('sync-pill');
   var txt  = document.getElementById('sync-txt');
   if (!pill) return;
   if (live) { pill.className = 'sync-pill live'; txt.textContent = 'live sync'; }
-  else       { pill.className = 'sync-pill';      txt.textContent = 'local'; }
+  else       { pill.className = 'sync-pill';      txt.textContent = errCode ? 'error: ' + errCode : 'local'; }
 }
 
 function save() {
@@ -720,26 +720,31 @@ function load() {
 
 function initFirebase() {
   if (!FIREBASE_CONFIG.apiKey || FIREBASE_CONFIG.apiKey === 'PASTE_HERE') return;
+  if (typeof firebase === 'undefined') {
+    setSyncStatus(false, 'SDK not loaded');
+    return;
+  }
   try {
-    firebase.initializeApp(FIREBASE_CONFIG);
-    db = firebase.firestore();
+    // Avoid "already exists" error on hot reloads
+    var app = firebase.apps.length ? firebase.app() : firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.firestore(app);
     db.doc(DB_DOC).onSnapshot(function(snap) {
       if (snap.exists) {
         data = snap.data().releases || [];
         try { localStorage.setItem(LSK, JSON.stringify(data)); } catch(e) {}
       } else {
-        // First ever open — seed the database with starter data
+        // First ever open — seed Firestore with current data
         db.doc(DB_DOC).set({ releases: data });
       }
       setSyncStatus(true);
       render();
     }, function(err) {
-      console.warn('Firestore error:', err);
-      setSyncStatus(false);
+      console.warn('Firestore error:', err.code, err.message);
+      setSyncStatus(false, err.code || 'error');
     });
   } catch(e) {
-    console.warn('Firebase init failed:', e);
-    setSyncStatus(false);
+    console.warn('Firebase init failed:', e.message);
+    setSyncStatus(false, 'init failed');
   }
 }
 function toast(msg) {
