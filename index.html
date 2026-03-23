@@ -78,6 +78,13 @@ body {
 }
 .ld-dot:nth-child(2) { animation-delay: 0.2s; }
 .ld-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes shake {
+  0%,100% { transform: translateX(0); }
+  20%      { transform: translateX(-5px); }
+  40%      { transform: translateX(5px); }
+  60%      { transform: translateX(-3px); }
+  80%      { transform: translateX(3px); }
+}
 @keyframes blink {
   0%,80%,100% { opacity: 0.2; transform: scale(0.75); }
   40% { opacity: 1; transform: scale(1); }
@@ -165,6 +172,8 @@ header {
   letter-spacing: 0.07em; text-transform: uppercase;
 }
 .s-sep { width: 1px; height: 22px; background: var(--border); flex-shrink: 0; }
+.s-item { cursor: default; padding: 4px 6px; border-radius: 8px; transition: background 0.15s; }
+.s-item:hover { background: var(--accent-s); }
 
 /* ── FILTERS ──────────────────────────────────────────── */
 .filters {
@@ -304,6 +313,15 @@ header {
 .schip.backlog    { background: rgba(148,163,184,0.14); color: var(--backlog); }
 .schip.production { background: rgba(217,119,6,0.1);   color: var(--prod); }
 .schip.ready      { background: rgba(124,58,237,0.1);  color: var(--ready); }
+.cd-chip {
+  font-size: 10px; font-weight: 500;
+  letter-spacing: 0.05em; text-transform: uppercase;
+  border-radius: 10px; padding: 2px 9px; white-space: nowrap;
+}
+.cd-over  { background: rgba(239,68,68,0.1);    color: #ef4444; }
+.cd-today { background: rgba(212,84,122,0.15);  color: var(--accent); font-weight:600; }
+.cd-soon  { background: rgba(217,119,6,0.1);    color: var(--prod); }
+.cd-ok    { background: rgba(148,163,184,0.1);  color: var(--backlog); }
 .schip.live       { background: rgba(22,163,74,0.1);   color: var(--live); }
 
 .card-acts {
@@ -460,12 +478,12 @@ header {
 <!-- HEADER -->
 <header>
   <div class="brand">
-    <div class="brand-kicker">♪ content calendar</div>
+    <div class="brand-kicker">✦ content calendar</div>
     <div class="brand-title">KV <em>Catalogue</em></div>
   </div>
   <div class="header-r">
     <div class="date-pill" id="today-pill"></div>
-    <button class="add-btn" id="add-btn">＋ Add Release</button>
+    <button class="add-btn" id="add-btn" aria-label="Add new release">+ Add Release</button>
   </div>
 </header>
 
@@ -492,7 +510,7 @@ header {
   <div class="s-item">
     <div class="s-dot" style="background:var(--ready)"></div>
     <span class="s-num" id="st-ready">0</span>
-    <span class="s-lbl">Ready</span>
+    <span class="s-lbl">Ingested</span>
   </div>
   <div class="s-sep"></div>
   <div class="s-item">
@@ -510,11 +528,16 @@ header {
   <button class="f-chip"     data-f="single">Single</button>
   <button class="f-chip"     data-f="collab">Collab</button>
   <button class="f-chip"     data-f="album">Album</button>
+  <button class="f-chip"     data-f="lyric">Lyric</button>
+  <button class="f-chip"     data-f="bts">BTS</button>
   <button class="f-chip"     data-f="__live">Live ✓</button>
   <button class="f-chip"     data-f="__backlog">Backlog</button>
   <div class="search-wrap">
-    <span class="search-ico">🔍</span>
-    <input class="search-in" id="search" type="text" placeholder="Search…"/>
+    <svg class="search-ico" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--faint);pointer-events:none;">
+    <circle cx="6.5" cy="6.5" r="4.5" stroke="currentColor" stroke-width="1.4"/>
+    <path d="M10 10l3.5 3.5" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+  </svg>
+    <input class="search-in" id="search" aria-label="Search releases" type="text" placeholder="Search…"/>
   </div>
 </div>
 
@@ -530,12 +553,12 @@ header {
 
     <div class="fg">
       <label class="fl">Title *</label>
-      <input class="fi" id="f-title" type="text" placeholder="e.g. Be For Real"/>
+      <input class="fi" id="f-title" type="text" placeholder="e.g. Be For Real" autocomplete="off" spellcheck="false"/>
     </div>
     <div class="fr">
       <div class="fg">
         <label class="fl">Artist</label>
-        <input class="fi" id="f-artist" type="text" placeholder="KV"/>
+        <input class="fi" id="f-artist" type="text" placeholder="KV" autocomplete="off" spellcheck="false"/>
       </div>
       <div class="fg">
         <label class="fl">Type</label>
@@ -552,7 +575,7 @@ header {
     <div class="fr">
       <div class="fg">
         <label class="fl">Release Date</label>
-        <input class="fi" id="f-date" type="date"/>
+        <input class="fi" id="f-date" type="date" title="Leave blank if date is TBD"/>
       </div>
     </div>
     <div class="fg">
@@ -560,13 +583,13 @@ header {
       <div class="status-pills" id="status-pills">
         <button class="s-pill" data-s="backlog">Backlog</button>
         <button class="s-pill" data-s="production">In Production</button>
-        <button class="s-pill" data-s="ready">Ready</button>
+        <button class="s-pill" data-s="ready">Ingested</button>
         <button class="s-pill" data-s="live">Live ✓</button>
       </div>
     </div>
     <div class="fg">
       <label class="fl">YouTube URL <span style="color:var(--faint);font-size:10px;">(paste when live)</span></label>
-      <input class="fi" id="f-yt" type="url" placeholder="https://youtube.com/watch?v=…"/>
+      <input class="fi" id="f-yt" type="url" placeholder="https://youtube.com/watch?v=…" autocomplete="off" spellcheck="false"/>
     </div>
     <div class="fg">
       <label class="fl">Notes</label>
@@ -593,37 +616,38 @@ header {
 var LSK = 'kv_catalogue_v2';
 
 var SEED = [
-  {id:'r1', title:'Be For Real',         artist:'KV',               type:'mv',     date:'2026-03-25', status:'production', yt:'', notes:'[with MV]'},
-  {id:'r2', title:'NN',                  artist:'KV & Pino G',      type:'mv',     date:'2026-04-01', status:'production', yt:'', notes:'[with MV]'},
-  {id:'r3', title:'Paano Iiwasan',       artist:'KV',               type:'single', date:'2026-04-08', status:'production', yt:'', notes:'Single release'},
-  {id:'b1', title:'Collab Track',        artist:'KV & Loonie',      type:'collab', date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b2', title:'Collab Track',        artist:'KV feat. Hellmerry',type:'collab',date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b3', title:'Can You Be Mine',     artist:'KV',               type:'single', date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b4', title:'Aglio Olio',          artist:'KV',               type:'single', date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b5', title:'Ngayong Gabi Uuwi Muli Sa Yakap Mo', artist:'KV',type:'single', date:'',           status:'backlog',    yt:'', notes:'City Girls'},
-  {id:'b6', title:'Mahalaga Ka',         artist:'KV',               type:'single', date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b7', title:'Oldrnb',              artist:'KV',               type:'single', date:'',           status:'backlog',    yt:'', notes:''},
-  {id:'b8', title:'Pantasya',            artist:'KV',               type:'album',  date:'',           status:'backlog',    yt:'', notes:'Album / EP'},
+  {id:'r1', title:'Be For Real',         artist:'KV',                type:'mv',     date:'2026-03-25', status:'production', yt:'', notes:'[with MV]'},
+  {id:'r2', title:'NN',                  artist:'KV & Pino G',       type:'mv',     date:'2026-04-01', status:'production', yt:'', notes:'[with MV]'},
+  {id:'r3', title:'Paano Iiwasan',       artist:'KV',                type:'single', date:'2026-04-08', status:'production', yt:'', notes:'Single release'},
+  {id:'b1', title:'Collab Track',        artist:'KV & Loonie',       type:'collab', date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b2', title:'Collab Track',        artist:'KV feat. Hellmerry', type:'collab',date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b3', title:'Can You Be Mine',     artist:'KV',                type:'single', date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b4', title:'Aglio Olio',          artist:'KV',                type:'single', date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b5', title:'Ngayong Gabi Uuwi Muli Sa Yakap Mo', artist:'KV', type:'single', date:'',           status:'backlog',    yt:'', notes:'City Girls'},
+  {id:'b6', title:'Mahalaga Ka',         artist:'KV',                type:'single', date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b7', title:'Oldrnb',              artist:'KV',                type:'single', date:'',           status:'backlog',    yt:'', notes:''},
+  {id:'b8', title:'Pantasya',            artist:'KV',                type:'album',  date:'',           status:'backlog',    yt:'', notes:'Album / EP'},
 ];
 
-// ── state ──────────────────────────────────────────────
-var data = [];
-var flt  = 'all';
-var q    = '';
-var eid  = null;    // editing id
+// ── state ──────────────────────────────────────────────────────────────────
+var data       = [];
+var flt        = 'all';
+var q          = '';
+var eid        = null;
 var cur_status = 'backlog';
 var toastTimer = null;
 
-// ── persist ────────────────────────────────────────────
+// ── persistence ────────────────────────────────────────────────────────────
+function uid() { return 'x' + Date.now() + Math.random().toString(36).slice(2,6); }
+
 function save() {
-  try { localStorage.setItem(LSK, JSON.stringify(data)); }
-  catch(e) {}
-  toast('Saved ✓');
+  try { localStorage.setItem(LSK, JSON.stringify(data)); } catch(e) {}
+  toast('Saved \u2713');
 }
 function load() {
   try {
-    var r = localStorage.getItem(LSK);
-    if (r) { data = JSON.parse(r); return; }
+    var raw = localStorage.getItem(LSK);
+    if (raw) { data = JSON.parse(raw); return; }
   } catch(e) {}
   data = SEED.map(function(x){ return Object.assign({}, x); });
 }
@@ -632,17 +656,15 @@ function toast(msg) {
   document.getElementById('toast-txt').textContent = msg;
   el.classList.add('show');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2000);
+  toastTimer = setTimeout(function(){ el.classList.remove('show'); }, 2200);
 }
 
-// ── helpers ────────────────────────────────────────────
-function uid() { return 'x' + Date.now() + Math.random().toString(36).slice(2,6); }
-
+// ── helpers ────────────────────────────────────────────────────────────────
 function typeLbl(t) {
   return {mv:'MV', single:'Single', collab:'Collab', lyric:'Lyric', bts:'BTS', album:'Album'}[t] || t;
 }
 function statusLbl(s) {
-  return {backlog:'Backlog', production:'In Production', ready:'Ready', live:'Live'}[s] || s;
+  return {backlog:'Backlog', production:'In Production', ready:'Ingested', live:'Live'}[s] || s;
 }
 function fmtDate(d) {
   if (!d) return 'TBD';
@@ -659,9 +681,24 @@ function esc(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ── filter ─────────────────────────────────────────────
+// ── countdown (full words) ─────────────────────────────────────────────────
+function countdownLabel(dateStr, status) {
+  if (status === 'live' || !dateStr) return '';
+  var dt   = new Date(dateStr + 'T00:00:00');
+  var now  = new Date(); now.setHours(0,0,0,0);
+  var diff = Math.round((dt - now) / 86400000);
+  if (diff < 0)  return {txt: Math.abs(diff) === 1 ? '1 day overdue' : Math.abs(diff) + ' days overdue', cls: 'cd-over'};
+  if (diff === 0) return {txt: 'today!',    cls: 'cd-today'};
+  if (diff === 1) return {txt: 'tomorrow',  cls: 'cd-soon'};
+  if (diff < 7)   return {txt: 'in ' + diff + ' days',   cls: 'cd-soon'};
+  if (diff < 30)  return {txt: 'in ' + Math.ceil(diff/7) + (Math.ceil(diff/7)===1?' week':' weeks'), cls: 'cd-ok'};
+  var months = Math.ceil(diff/30);
+  return {txt: 'in ' + months + (months===1?' month':' months'), cls: 'cd-ok'};
+}
+
+// ── filter ─────────────────────────────────────────────────────────────────
 function filtered() {
-  return data.filter(function(r){
+  return data.filter(function(r) {
     if (flt === '__live')    return r.status === 'live';
     if (flt === '__backlog') return r.status === 'backlog';
     if (flt !== 'all' && r.type !== flt) return false;
@@ -674,14 +711,15 @@ function filtered() {
   });
 }
 
-// ── render ─────────────────────────────────────────────
+// ── render ─────────────────────────────────────────────────────────────────
 function render() {
   var list = filtered();
   var main = document.getElementById('main');
+  if (!main) return;
 
   // group by month
   var groups = {}, keys = [];
-  list.forEach(function(r){
+  list.forEach(function(r) {
     var k = monthKey(r.date);
     if (!groups[k]) { groups[k] = []; keys.push(k); }
     groups[k].push(r);
@@ -689,49 +727,54 @@ function render() {
   keys.sort();
 
   if (!keys.length) {
-    main.innerHTML = '<div class="empty"><div class="empty-ico">🎵</div><div class="empty-txt">No releases found</div></div>';
-    updateStats(); return;
+    main.innerHTML = '<div class="empty"><div class="empty-ico">\uD83C\uDF80</div><div class="empty-txt">No releases match this filter</div></div>';
+    updateStats();
+    return;
   }
 
-  main.innerHTML = keys.map(function(k){
-    var items = groups[k].slice().sort(function(a,b){
+  main.innerHTML = keys.map(function(k) {
+    var items = groups[k].slice().sort(function(a,b) {
       if (!a.date && !b.date) return 0;
-      if (!a.date) return 1; if (!b.date) return -1;
+      if (!a.date) return 1;
+      if (!b.date) return -1;
       return a.date < b.date ? -1 : 1;
     });
     return '<div class="month-group">' +
       '<div class="month-hd">' +
         '<div class="month-name">' + monthLbl(k) + '</div>' +
         '<div class="month-line"></div>' +
-        '<div class="month-ct">' + items.length + ' release' + (items.length!==1?'s':'') + '</div>' +
+        '<div class="month-ct">' + items.length + ' release' + (items.length !== 1 ? 's' : '') + '</div>' +
       '</div>' +
       items.map(buildCard).join('') +
     '</div>';
   }).join('');
 
   // wire clicks
-  main.querySelectorAll('.card').forEach(function(el){
-    el.addEventListener('click', function(e){
+  main.querySelectorAll('.card').forEach(function(el) {
+    el.addEventListener('click', function(e) {
       if (e.target.closest('.act-btn')) return;
       openEdit(el.dataset.id);
     });
   });
-  main.querySelectorAll('.act-btn.edit').forEach(function(el){
-    el.addEventListener('click', function(e){ e.stopPropagation(); openEdit(el.dataset.id); });
+  main.querySelectorAll('.act-btn.edit').forEach(function(el) {
+    el.addEventListener('click', function(e) { e.stopPropagation(); openEdit(el.dataset.id); });
   });
-  main.querySelectorAll('.act-btn.del').forEach(function(el){
-    el.addEventListener('click', function(e){ e.stopPropagation(); openEdit(el.dataset.id, true); });
+  main.querySelectorAll('.act-btn.del').forEach(function(el) {
+    el.addEventListener('click', function(e) { e.stopPropagation(); openEdit(el.dataset.id, true); });
   });
 
   updateStats();
 }
 
 function buildCard(r) {
+  var cd  = countdownLabel(r.date, r.status);
+  var cdEl = cd ? '<span class="cd-chip ' + cd.cls + '">' + esc(cd.txt) + '</span>' : '';
   var ytEl = r.yt
-    ? '<a class="yt-badge" href="' + esc(r.yt) + '" target="_blank" onclick="event.stopPropagation()">▶ Watch on YouTube</a>'
+    ? '<a class="yt-badge" href="' + esc(r.yt) + '" target="_blank" onclick="event.stopPropagation()">\u25B6 Watch on YouTube</a>'
     : '';
   var noteEl = r.notes ? '<div class="card-note">' + esc(r.notes.slice(0,60)) + '</div>' : '';
-  return '<div class="card ' + r.type + (r.status==='live'?' is-live':'') + '" data-id="' + r.id + '">' +
+
+  return '<div class="card ' + r.type + (r.status === 'live' ? ' is-live' : '') + '" data-id="' + r.id + '">' +
     '<div class="card-body">' +
       '<div class="card-title">' + esc(r.title) + '</div>' +
       '<div class="card-artist">' + esc(r.artist) + '</div>' +
@@ -739,11 +782,12 @@ function buildCard(r) {
     '</div>' +
     '<div class="card-r">' +
       '<div class="card-date">' + fmtDate(r.date) + '</div>' +
+      cdEl +
       '<span class="chip ' + r.type + '">' + typeLbl(r.type) + '</span>' +
       '<span class="schip ' + r.status + '">' + statusLbl(r.status) + '</span>' +
       '<div class="card-acts">' +
-        '<button class="act-btn edit" data-id="' + r.id + '" title="Edit">✏️</button>' +
-        '<button class="act-btn del"  data-id="' + r.id + '" title="Remove">🗑</button>' +
+        '<button class="act-btn edit" data-id="' + r.id + '" title="Edit">\u270F\uFE0F</button>' +
+        '<button class="act-btn del"  data-id="' + r.id + '" title="Remove">\uD83D\uDDD1</button>' +
       '</div>' +
     '</div>' +
   '</div>';
@@ -757,15 +801,15 @@ function updateStats() {
   document.getElementById('st-backlog').textContent = data.filter(function(r){ return r.status==='backlog'; }).length;
 }
 
-// ── status pills ───────────────────────────────────────
+// ── status pills ───────────────────────────────────────────────────────────
 function setStatus(s) {
   cur_status = s;
-  document.querySelectorAll('.s-pill').forEach(function(p){
+  document.querySelectorAll('.s-pill').forEach(function(p) {
     p.className = 's-pill' + (p.dataset.s === s ? ' sel-' + s : '');
   });
 }
 
-// ── modal open ─────────────────────────────────────────
+// ── modal ──────────────────────────────────────────────────────────────────
 function openAdd() {
   eid = null;
   document.getElementById('m-head').textContent = 'New Release';
@@ -784,11 +828,11 @@ function openAdd() {
 }
 
 function openEdit(id, showDel) {
-  var r = data.find(function(x){ return x.id===id; });
+  var r = data.find(function(x){ return x.id === id; });
   if (!r) return;
   eid = id;
   document.getElementById('m-head').textContent = 'Edit Release';
-  document.getElementById('m-sub').textContent  = r.artist + ' — ' + r.title;
+  document.getElementById('m-sub').textContent  = r.artist + ' \u2014 ' + r.title;
   document.getElementById('f-title').value  = r.title;
   document.getElementById('f-artist').value = r.artist;
   document.getElementById('f-type').value   = r.type;
@@ -809,7 +853,14 @@ function closeModal() {
 
 function saveModal() {
   var title = document.getElementById('f-title').value.trim();
-  if (!title) { document.getElementById('f-title').focus(); return; }
+  if (!title) {
+    var ti = document.getElementById('f-title');
+    ti.style.borderColor = 'var(--accent)';
+    ti.style.animation = 'shake 0.35s ease';
+    ti.focus();
+    setTimeout(function(){ ti.style.borderColor = ''; ti.style.animation = ''; }, 700);
+    return;
+  }
   var obj = {
     id:     eid || uid(),
     title:  title,
@@ -821,7 +872,7 @@ function saveModal() {
     notes:  document.getElementById('f-notes').value.trim(),
   };
   if (eid) {
-    var i = data.findIndex(function(r){ return r.id===eid; });
+    var i = data.findIndex(function(r){ return r.id === eid; });
     if (i >= 0) data[i] = obj;
   } else {
     data.push(obj);
@@ -830,71 +881,75 @@ function saveModal() {
 }
 
 function delEntry(id) {
-  data = data.filter(function(r){ return r.id!==id; });
+  data = data.filter(function(r){ return r.id !== id; });
   save(); closeModal(); render();
 }
 
-// ── boot ───────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', function(){
-  // today
+// ── boot ───────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('today-pill').textContent =
     new Date().toLocaleDateString('en-US', {weekday:'long', month:'long', day:'numeric'});
 
   load();
 
-  setTimeout(function(){
+  setTimeout(function() {
     document.getElementById('loading').classList.add('gone');
     render();
   }, 650);
 
-  // filter chips
-  document.querySelectorAll('.f-chip').forEach(function(btn){
-    btn.addEventListener('click', function(){
+  // filters
+  document.querySelectorAll('.f-chip').forEach(function(btn) {
+    btn.addEventListener('click', function() {
       document.querySelectorAll('.f-chip').forEach(function(b){ b.classList.remove('on'); });
       btn.classList.add('on');
       flt = btn.dataset.f;
       render();
+      window.scrollTo({top: 0, behavior: 'smooth'});
     });
   });
 
   // search
-  document.getElementById('search').addEventListener('input', function(){
+  document.getElementById('search').addEventListener('input', function() {
     q = this.value.trim(); render();
   });
 
-  // add btn
+  // add
   document.getElementById('add-btn').addEventListener('click', openAdd);
 
   // modal close
   document.getElementById('mx').addEventListener('click', closeModal);
   document.getElementById('m-cancel').addEventListener('click', closeModal);
-  document.getElementById('overlay').addEventListener('click', function(e){
+  document.getElementById('overlay').addEventListener('click', function(e) {
     if (e.target === this) closeModal();
   });
 
-  // save
-  document.getElementById('m-save').addEventListener('click', saveModal);
+  // save (debounced)
+  document.getElementById('m-save').addEventListener('click', function() {
+    var btn = this; btn.disabled = true;
+    saveModal();
+    setTimeout(function(){ btn.disabled = false; }, 400);
+  });
 
   // delete
-  document.getElementById('m-del').addEventListener('click', function(){
+  document.getElementById('m-del').addEventListener('click', function() {
     if (eid) document.getElementById('del-confirm').classList.add('open');
   });
-  document.getElementById('confirm-del').addEventListener('click', function(){
+  document.getElementById('confirm-del').addEventListener('click', function() {
     if (eid) delEntry(eid);
   });
-  document.getElementById('cancel-del').addEventListener('click', function(){
+  document.getElementById('cancel-del').addEventListener('click', function() {
     document.getElementById('del-confirm').classList.remove('open');
   });
 
   // status pills
-  document.querySelectorAll('.s-pill').forEach(function(p){
+  document.querySelectorAll('.s-pill').forEach(function(p) {
     p.addEventListener('click', function(){ setStatus(p.dataset.s); });
   });
 
   // keyboard
-  document.addEventListener('keydown', function(e){
+  document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') closeModal();
-    if ((e.metaKey||e.ctrlKey) && e.key==='Enter'){
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
       if (document.getElementById('overlay').classList.contains('open')) saveModal();
     }
   });
